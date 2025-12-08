@@ -1,0 +1,23 @@
+/* 引入 Tailwind CSS 的基本指令 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 额外添加一些全局基础样式 */
+:root {
+  /* 确保应用默认使用 Inter 字体，如果没有则使用系统默认 */
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* 确保所有元素都使用 border-box 盒模型 */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
