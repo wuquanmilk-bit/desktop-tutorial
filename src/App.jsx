@@ -48,7 +48,6 @@ const LinkForm = ({ links = [], setLinks }) => {
     setLinks(arr);
   };
   const remove = (i) => setLinks(links.filter((_, idx) => idx !== i));
-
   return (
     <div className="space-y-2">
       {links.map((l, i) => (
@@ -80,7 +79,7 @@ const PublicNav = ({ navData = [], searchTerm = '' }) => {
       .filter(cat => (cat.links || []).length > 0);
   }, [navData, searchTerm]);
 
-  if (!filtered || filtered.length === 0) {
+  if (!filtered.length) {
     return (
       <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl shadow">
         <Search className="w-12 h-12 mx-auto text-gray-400 mb-4" />
@@ -159,11 +158,11 @@ const Panel = ({ navData, setNavData, user, isAdmin }) => {
         </div>
 
         <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded mb-4">
-          <input className="w-full p-3 rounded border mb-3 dark:bg-gray-600" placeholder="分类名称" value={newCategory.category} onChange={(e) => setNewCategory({ ...newCategory, category: e.target.value })} />
-          <input type="number" className="w-32 p-3 rounded border mb-3 dark:bg-gray-600" value={newCategory.sort_order} onChange={(e) => setNewCategory({ ...newCategory, sort_order: parseInt(e.target.value || '0') })} />
+          <input className="w-full p-3 rounded border mb-3 dark:bg-gray-600" placeholder="分类名称" value={newCategory.category} onChange={e => setNewCategory({ ...newCategory, category: e.target.value })} />
+          <input type="number" className="w-32 p-3 rounded border mb-3 dark:bg-gray-600" value={newCategory.sort_order} onChange={e => setNewCategory({ ...newCategory, sort_order: parseInt(e.target.value || '0') })} />
           <div className="mb-3">
             <h4 className="font-medium mb-2">链接</h4>
-            <LinkForm links={newCategory.links} setLinks={(links) => setNewCategory({ ...newCategory, links })} />
+            <LinkForm links={newCategory.links} setLinks={links => setNewCategory({ ...newCategory, links })} />
           </div>
           <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded">{loading ? '保存中...' : '保存分类'}</button>
         </div>
@@ -177,41 +176,6 @@ const Panel = ({ navData, setNavData, user, isAdmin }) => {
             <LinkForm links={cat.links} setLinks={links => updateCategory(idx, { ...cat, links })} />
           </div>
         ))}
-      </div>
-    </div>
-  );
-};
-
-const LoginModal = ({ onClose, onLogin }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      onLogin && onLogin(data.user);
-      onClose();
-    } catch (err) {
-      alert('登录失败: ' + (err?.message || err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-        <button onClick={onClose} className="float-right"><X /></button>
-        <h3 className="text-xl font-bold mb-4">登录</h3>
-        <form onSubmit={submit} className="space-y-3">
-          <input type="email" className="w-full p-3 border rounded dark:bg-gray-600" placeholder="邮箱" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input type="password" className="w-full p-3 border rounded dark:bg-gray-600" placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">{loading ? '登录中...' : '登录'}</button>
-        </form>
       </div>
     </div>
   );
@@ -233,22 +197,57 @@ const Footer = ({ setCurrentPage }) => {
   );
 };
 
+const LoginModal = ({ onClose, onLogin }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async e => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      onLogin(data.user);
+      onClose();
+    } catch (err) {
+      alert('登录失败: ' + (err?.message || err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <button onClick={onClose} className="float-right"><X /></button>
+        <h3 className="text-xl font-bold mb-4">登录</h3>
+        <form onSubmit={submit} className="space-y-3">
+          <input type="email" placeholder="邮箱" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 border rounded dark:bg-gray-600" />
+          <input type="password" placeholder="密码" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 border rounded dark:bg-gray-600" />
+          <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">{loading ? '登录中...' : '登录'}</button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const AboutPage = () => (
   <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
     <h2 className="text-2xl font-bold mb-3">关于第一象限 极速导航网</h2>
-    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>【站点功能】</strong><br />本站致力于提供一个<b>简洁、快速、纯粹</b>的网址导航服务。我们精心筛选了常用、高效和高质量的网站链接，并将它们按类别清晰展示，旨在成为您日常网络冲浪的起点站。</p>
-    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>【创设初衷：拒绝广告】</strong><br />在信息爆炸的时代，许多导航网站充斥着干扰性的广告和推广内容，严重影响用户体验和访问速度。<b>第一象限</b> 创建本站的初衷正是为了提供一个<b>零广告、零干扰</b>的净土。我们承诺，本站将永久保持简洁干净，只专注于网址导航这一核心功能。</p>
-    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>【作者】</strong><br />由 第一象限 独立设计与开发。联系邮箱: 115382613@qq.com</p>
+    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>【站点功能】</strong> 本站致力于提供一个<b>简洁、快速、纯粹</b>的网址导航服务。精心筛选常用、高效、高质量网站，按类别清晰展示。</p>
+    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>【创设初衷：拒绝广告】</strong> 提供<b>零广告、零干扰</b>的净土。本站只专注于网址导航核心功能。</p>
+    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>【作者】</strong> 第一象限独立开发，联系邮箱:115382613@qq.com</p>
   </div>
 );
 
 const DisclaimerPage = () => (
   <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
     <h2 className="text-2xl font-bold mb-3">免责声明</h2>
-    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>1. 内容准确性</strong><br />本网站（第一象限 极速导航网）所提供的所有链接信息均来源于互联网公开信息或用户提交。本站会尽力确保信息的准确性和时效性，但不对信息的完整性、准确性、时效性或可靠性作任何形式的明示或暗示的担保。</p>
-    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>2. 外部链接责任</strong><br />本站提供的所有外部网站链接（包括但不限于导航网站、资源链接等）仅为方便用户访问而设置。本站对任何链接到的第三方网站的内容、政策、产品或服务不承担任何法律责任。用户点击并访问外部链接时，即表示自行承担由此产生的一切风险。</p>
-    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>3. 法律法规遵守</strong><br />用户在使用本站服务时，须承诺遵守当地所有适用的法律法规。任何用户利用本站从事违反法律法规的行为，均与本站无关，本站不承担任何法律责任。</p>
-    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>4. 图标与版权声明</strong><br />本站网址图标有些因为网络原因、技术缺陷，可能导致图标显示不准确。如果涉及侵权，请联系作者删除。作者邮箱：115382613@qq.com</p>
+    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>1. 内容准确性</strong> 本站提供的链接均来源于公开信息或用户提交，尽力保证准确性，但不作保证。</p>
+    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>2. 外部链接责任</strong> 本站不对第三方网站内容负责，用户访问风险自负。</p>
+    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>3. 法律法规遵守</strong> 用户须遵守当地法律法规，本站不承担任何法律责任。</p>
+    <p className="text-gray-600 dark:text-gray-300 mb-2"><strong>4. 图标与版权声明</strong> 图标可能显示不准确，如涉及侵权，请联系作者删除。邮箱：115382613@qq.com</p>
   </div>
 );
 
@@ -260,71 +259,56 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [showPanel, setShowPanel] = useState(false);
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data?.session?.user || null));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user || null));
-    return () => sub?.subscription?.unsubscribe && sub.subscription.unsubscribe();
+    return () => sub?.subscription?.unsubscribe?.();
   }, []);
 
   useEffect(() => {
-    const loadData = async () => {
+    const load = async () => {
       try {
         const { data, error } = await supabase.from('nav_categories').select().order('sort_order', { ascending: true });
         if (error) throw error;
         setNavData(data || DEFAULT_NAV_DATA);
-      } catch (e) {
-        console.error('加载数据失败，使用默认数据', e);
+      } catch {
         setNavData(DEFAULT_NAV_DATA);
       }
     };
-    loadData();
+    load();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
+  const isAdmin = user?.email === ADMIN_EMAIL;
+  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); setShowPanel(false); };
 
   const renderContent = () => {
     if (currentPage === 'about') return <AboutPage />;
     if (currentPage === 'disclaimer') return <DisclaimerPage />;
-    return (
-      <>
-        <PublicNav navData={navData} searchTerm={searchTerm} />
-        {user && showPanel && <Panel navData={navData} setNavData={setNavData} user={user} isAdmin={isAdmin} />}
-      </>
-    );
+    return <>
+      <PublicNav navData={navData} searchTerm={searchTerm} />
+      {user && showPanel && <Panel navData={navData} setNavData={setNavData} user={user} isAdmin={isAdmin} />}
+    </>;
   };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020]">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">极速导航网</h1>
-            <input type="text" placeholder="搜索..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="p-2 border rounded dark:bg-gray-600" />
-          </div>
-          <div>
-            {user ? (
-              <div className="flex items-center gap-2">
-                <button onClick={() => setShowPanel(!showPanel)} className="px-3 py-1 bg-green-600 text-white rounded">{showPanel ? '关闭面板' : '打开面板'}</button>
-                <button onClick={handleLogout} className="px-3 py-1 bg-red-600 text-white rounded">退出</button>
-              </div>
-            ) : (
-              <button onClick={() => setShowLogin(true)} className="px-3 py-1 bg-blue-600 text-white rounded">登录</button>
-            )}
-          </div>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow p-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white cursor-pointer" onClick={() => setCurrentPage('home')}>极速导航网</h1>
+        <div className="flex gap-2">
+          <input type="text" placeholder="搜索..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="p-2 border rounded dark:bg-gray-600" />
+          {user ? (
+            <>
+              <button onClick={() => setShowPanel(!showPanel)} className="px-3 py-1 bg-green-600 text-white rounded">{showPanel ? '关闭面板' : '打开面板'}</button>
+              <button onClick={handleLogout} className="px-3 py-1 bg-red-600 text-white rounded">退出</button>
+            </>
+          ) : (
+            <button onClick={() => setShowLogin(true)} className="px-3 py-1 bg-blue-600 text-white rounded">登录</button>
+          )}
         </div>
       </header>
 
-      <main className="pt-24 px-4">
-        {renderContent()}
-      </main>
-
+      <main className="pt-24 px-4">{renderContent()}</main>
       <Footer setCurrentPage={setCurrentPage} />
-
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={setUser} />}
     </div>
   );
