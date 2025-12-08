@@ -220,11 +220,11 @@ const AdminPanel = ({ navData = [], setNavData }) => {
   );
 };
 
-// ----------------- UserPanel (与管理员面板功能一致) -----------------
+// ----------------- User Panel (用户个人面板，CRUD for nav_user_*) -----------------
 const UserPanel = ({ user, userNav, setUserNav }) => {
-  const [newCategory, setNewCategory] = useState({ category: '', sort_order: 0, links: [] });
-  const [editing, setEditing] = useState(null);
+  const [newCatName, setNewCatName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [editingCat, setEditingCat] = useState(null);
 
   const loadUserNav = async () => {
     if (!user) return;
@@ -235,42 +235,29 @@ const UserPanel = ({ user, userNav, setUserNav }) => {
         .eq('user_id', user.id)
         .order('sort_order', { ascending: true });
       if (error) throw error;
+      // normalize: links field name to 'links'
       const normalized = (data || []).map(c => ({ id: c.id, category: c.category, sort_order: c.sort_order, links: c.nav_user_links || [] }));
       setUserNav(normalized);
-    } catch (e) { console.error('加载用户导航失败', e); }
+    } catch (e) {
+      console.error('加载用户导航失败', e);
+    }
   };
 
   useEffect(() => { loadUserNav(); }, [user]);
 
-  const handleAddCategory = async () => {
-    if (!newCategory.category.trim()) { alert('请输入分类名'); return; }
+  const addCategory = async () => {
+    if (!newCatName.trim()) { alert('请输入分类名'); return; }
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('nav_user_categories')
-        .insert([{ user_id: user.id, category: newCategory.category, sort_order: newCategory.sort_order }])
-        .select().single();
+      const { data, error } = await supabase.from('nav_user_categories').insert([{ user_id: user.id, category: newCatName, sort_order: 0 }]).select().single();
       if (error) throw error;
-      setUserNav(prev => [...prev, { ...data, links: newCategory.links || [] }]);
-      setNewCategory({ category: '', sort_order: 0, links: [] });
+      setUserNav(prev => [...prev, { id: data.id, category: data.category, sort_order: data.sort_order, links: [] }]);
+      setNewCatName('');
     } catch (e) { alert('新增失败: ' + (e?.message || e)); } finally { setLoading(false); }
   };
 
-  const startEdit = (cat) => setEditing({ ...cat });
-  const cancelEdit = () => setEditing(null);
-  const saveEdit = async () => {
-    if (!editing) return;
-    try {
-      const { data, error } = await supabase.from('nav_user_categories')
-        .update({ category: editing.category, sort_order: editing.sort_order, links: editing.links })
-        .eq('id', editing.id).eq('user_id', user.id).select().single();
-      if (error) throw error;
-      setUserNav(prev => prev.map(p => p.id === data.id ? data : p));
-      setEditing(null);
-    } catch (e) { alert('保存失败: ' + (e?.message || e)); }
-  };
-
   const deleteCategory = async (id) => {
-    if (!confirm('确定删除此分类？此操作不可恢复')) return;
+    if (!confirm('确定删除此分类？将同时删除分类下的链接')) return;
     try {
       const { error } = await supabase.from('nav_user_categories').delete().eq('id', id).eq('user_id', user.id);
       if (error) throw error;
@@ -278,13 +265,22 @@ const UserPanel = ({ user, userNav, setUserNav }) => {
     } catch (e) { alert('删除失败: ' + (e?.message || e)); }
   };
 
+  const saveCategoryEdit = async () => {
+    if (!editingCat) return;
+    try {
+      const { data, error } = await supabase.from('nav_user_categories').update({ category: editingCat.category, sort_order: editingCat.sort_order }).eq('id', editingCat.id).eq('user_id', user.id).select().single();
+      if (error) throw error;
+      setUserNav(prev => prev.map(p => p.id === data.id ? { ...p, category: data.category, sort_order: data.sort_order } : p));
+      setEditingCat(null);
+    } catch (e) { alert('保存失败: ' + (e?.message || e)); }
+  };
+
   const addLink = async (categoryId, link) => {
     if (!link.name || !link.url) { alert('名称和链接为必填'); return; }
     if (!isValidUrl(link.url)) { if (!confirm('链接格式看起来不对，仍要保存？')) return; }
     try {
-      const { data, error } = await supabase.from('nav_user_links')
-        .insert([{ category_id: categoryId, user_id: user.id, name: link.name, url: link.url, description: link.description || '', icon: link.icon || null }])
-        .select().single();
+      const payload = { category_id: categoryId, user_id: user.id, name: link.name, url: link.url, description: link.description || '', icon: link.icon || null };
+      const { data, error } = await supabase.from('nav_user_links').insert([payload]).select().single();
       if (error) throw error;
       setUserNav(prev => prev.map(c => c.id === categoryId ? { ...c, links: [...(c.links||[]), data] } : c));
     } catch (e) { alert('新增链接失败: ' + (e?.message || e)); }
@@ -310,68 +306,72 @@ const UserPanel = ({ user, userNav, setUserNav }) => {
   return (
     <div className="mt-8">
       <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border">
-        <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">我的导航管理</h3>
-
-        {/* 新增分类 */}
-        <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded mb-4">
-          <input className="w-full p-3 rounded border mb-2 dark:bg-gray-600" placeholder="分类名称" value={newCategory.category} onChange={e => setNewCategory({ ...newCategory, category: e.target.value })} />
-          <input type="number" className="w-32 p-2 rounded border mb-2 dark:bg-gray-600" value={newCategory.sort_order} onChange={e => setNewCategory({ ...newCategory, sort_order: parseInt(e.target.value||0) })} />
-          <LinkForm links={newCategory.links} setLinks={(links) => setNewCategory({ ...newCategory, links })} />
-          <button onClick={handleAddCategory} className="px-4 py-2 bg-blue-600 text-white rounded">{loading ? '保存中...' : '新增分类'}</button>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white"><Settings className="mr-2 inline" /> 我的导航</h3>
         </div>
 
-        {/* 分类列表 */}
-        {userNav.map(cat => (
-          <div key={cat.id} className="p-3 bg-white dark:bg-gray-800 rounded border mb-4">
-            <div className="flex justify-between mb-2">
-              <div>
-                <div className="font-medium">{cat.category}</div>
-                <div className="text-sm text-gray-400">{(cat.links||[]).length} 个链接 · 排序 {cat.sort_order}</div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => startEdit(cat)} className="px-3 py-1 bg-yellow-500 text-white rounded flex items-center gap-2"><Edit className="w-4 h-4" /> 编辑</button>
-                <button onClick={() => deleteCategory(cat.id)} className="px-3 py-1 bg-red-600 text-white rounded flex items-center gap-2"><Trash2 className="w-4 h-4" /> 删除</button>
-              </div>
-            </div>
+        <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded mb-4">
+          <div className="flex gap-2">
+            <input className="flex-1 p-3 rounded border dark:bg-gray-600" placeholder="新增分类名称" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} />
+            <button onClick={addCategory} className="px-4 py-2 bg-blue-600 text-white rounded">新增分类</button>
+          </div>
+        </div>
 
-            {/* 链接列表 */}
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {cat.links.map(link => (
-                <div key={link.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <LinkIcon link={link} />
-                    <div>
-                      <input value={link.name} onChange={e => updateLink(link.id, { name: e.target.value })} className="font-medium w-28 p-1 rounded border dark:bg-gray-600" />
-                      <input value={link.url} onChange={e => updateLink(link.id, { url: e.target.value })} className="text-sm text-gray-400 w-52 p-1 rounded border dark:bg-gray-600" />
-                      <input value={link.description} onChange={e => updateLink(link.id, { description: e.target.value })} className="text-sm text-gray-400 w-52 p-1 rounded border dark:bg-gray-600" />
+        <div className="space-y-4">
+          {userNav.map(cat => (
+            <div key={cat.id} className="p-3 bg-white dark:bg-gray-800 rounded border">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="font-medium">{cat.category}</div>
+                  <div className="text-sm text-gray-400">{(cat.links || []).length} 个链接</div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setEditingCat(cat)} className="px-3 py-1 bg-yellow-500 text-white rounded flex items-center gap-2"><Edit className="w-4 h-4" /> 编辑</button>
+                  <button onClick={() => deleteCategory(cat.id)} className="px-3 py-1 bg-red-600 text-white rounded flex items-center gap-2"><Trash2 className="w-4 h-4" /> 删除</button>
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {(cat.links || []).map(link => (
+                  <div key={link.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <LinkIcon link={link} />
+                      <div>
+                        <div className="font-medium">{link.name}</div>
+                        <div className="text-sm text-gray-400 truncate" style={{ maxWidth: 240 }}>{link.url}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="px-2 py-1 border rounded">打开</a>
+                      <button onClick={() => deleteLink(link.id)} className="px-2 py-1 bg-red-500 text-white rounded">删</button>
                     </div>
                   </div>
-                  <button onClick={() => deleteLink(link.id)} className="px-2 py-1 bg-red-500 text-white rounded">删除</button>
-                </div>
-              ))}
-            </div>
-
-            {/* 编辑分类 */}
-            {editing?.id === cat.id && (
-              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                <input className="w-full p-2 rounded border mb-2 dark:bg-gray-600" value={editing.category} onChange={e => setEditing({ ...editing, category: e.target.value })} />
-                <input type="number" className="w-32 p-2 rounded border mb-2 dark:bg-gray-600" value={editing.sort_order} onChange={e => setEditing({ ...editing, sort_order: parseInt(e.target.value||0) })} />
-                <LinkForm links={editing.links || []} setLinks={(links) => setEditing({ ...editing, links })} />
-                <div className="flex gap-2">
-                  <button onClick={saveEdit} className="px-3 py-1 bg-green-600 text-white rounded">保存</button>
-                  <button onClick={cancelEdit} className="px-3 py-1 border rounded">取消</button>
-                </div>
+                ))}
               </div>
-            )}
 
-          </div>
-        ))}
+              {editingCat && editingCat.id === cat.id && (
+                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <h4 className="font-medium mb-2">编辑分类</h4>
+                  <input className="w-full p-2 rounded border mb-2 dark:bg-gray-600" value={editingCat.category} onChange={(e) => setEditingCat({ ...editingCat, category: e.target.value })} />
+                  <div className="flex gap-2">
+                    <button onClick={saveCategoryEdit} className="px-3 py-1 bg-green-600 text-white rounded">保存</button>
+                    <button onClick={() => setEditingCat(null)} className="px-3 py-1 border rounded">取消</button>
+                  </div>
+                  <div className="mt-3">
+                    <h5 className="font-medium mb-1">新增链接</h5>
+                    <AddLinkForm onAdd={(link) => addLink(cat.id, link)} />
+                  </div>
+                </div>
+              )}
+
+            </div>
+          ))}
+        </div>
 
       </div>
     </div>
   );
 };
-
 
 // AddLinkForm 内置组件
 const AddLinkForm = ({ onAdd }) => {
