@@ -1,7 +1,7 @@
 // src/App.jsx
 import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from './supabaseClient';
-import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User } from 'lucide-react';
+import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Grid, Home } from 'lucide-react';
 import './index.css';
 
 // ----------------- 配置 -----------------
@@ -36,6 +36,19 @@ const DEFAULT_PUBLIC_NAV = [
     links: [
       { id: 'link-4', name: 'Figma', url: 'https://figma.com', description: '设计工具' },
       { id: 'link-5', name: 'Unsplash', url: 'https://unsplash.com', description: '免费图片' }
+    ]
+  }
+];
+
+// ----------------- 默认用户导航数据 -----------------
+const DEFAULT_USER_NAV = [
+  {
+    id: 1,
+    category: '我的收藏',
+    sort_order: 1,
+    links: [
+      { id: 'user-link-1', name: '个人项目', url: 'https://github.com/your-projects', description: '我的GitHub项目' },
+      { id: 'user-link-2', name: '学习笔记', url: 'https://notion.so', description: '学习笔记' }
     ]
   }
 ];
@@ -202,8 +215,15 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
   );
 };
 
-// 管理员面板组件
-const AdminPanel = ({ navData = [], setNavData, onClose }) => {
+// 通用导航管理面板（管理员和用户共用）
+const NavManagerPanel = ({ 
+  title, 
+  icon: Icon, 
+  navData = [], 
+  setNavData, 
+  onClose,
+  isAdmin = false
+}) => {
   const [newCategory, setNewCategory] = useState({ category: '', sort_order: 0 });
   const [editingCategory, setEditingCategory] = useState(null);
   const [addingLinkTo, setAddingLinkTo] = useState(null);
@@ -343,7 +363,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose }) => {
         {/* 标题栏 */}
         <div className="p-6 border-b flex justify-between items-center">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-            <Settings className="inline mr-2" /> 管理公共导航
+            <Icon className="inline mr-2" /> {title}
           </h3>
           <button 
             onClick={onClose}
@@ -587,11 +607,14 @@ const LoginModal = ({ onClose, onLogin }) => {
 // ----------------- 主应用组件 -----------------
 export default function App() {
   const [publicNav, setPublicNav] = useState(DEFAULT_PUBLIC_NAV);
+  const [userNav, setUserNav] = useState(DEFAULT_USER_NAV);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 200);
   const [showLogin, setShowLogin] = useState(false);
   const [user, setUser] = useState(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showUserPanel, setShowUserPanel] = useState(false);
+  const [viewMode, setViewMode] = useState('public'); // 'public' 或 'user'
 
   const isAdmin = user?.email === ADMIN_EMAIL;
 
@@ -613,6 +636,8 @@ export default function App() {
     await supabase.auth.signOut();
     setUser(null);
     setShowAdminPanel(false);
+    setShowUserPanel(false);
+    setViewMode('public');
   };
 
   // 键盘快捷键
@@ -628,6 +653,14 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // 当前显示的导航数据
+  const currentNavData = useMemo(() => {
+    if (!user) return publicNav;
+    if (viewMode === 'public') return publicNav;
+    if (viewMode === 'user') return userNav;
+    return publicNav;
+  }, [user, viewMode, publicNav, userNav]);
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020]">
       {/* 顶部导航栏 */}
@@ -635,9 +668,18 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-                极速导航
-              </h1>
+              <button
+                onClick={() => {
+                  setViewMode('public');
+                  setShowAdminPanel(false);
+                  setShowUserPanel(false);
+                }}
+                className="flex items-center gap-2"
+              >
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                  极速导航
+                </h1>
+              </button>
               <span className="text-sm text-gray-500 dark:text-gray-300 hidden sm:inline">
                 你的快速入口
               </span>
@@ -666,17 +708,55 @@ export default function App() {
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
+                  {/* 视图切换按钮 */}
+                  <div className="flex border rounded overflow-hidden">
+                    <button
+                      onClick={() => setViewMode('public')}
+                      className={`px-3 py-1 flex items-center gap-1 ${viewMode === 'public' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
+                    >
+                      <Home className="w-4 h-4" />
+                      <span className="hidden sm:inline">公共</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('user')}
+                      className={`px-3 py-1 flex items-center gap-1 ${viewMode === 'user' ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
+                    >
+                      <User className="w-4 h-4" />
+                      <span className="hidden sm:inline">我的</span>
+                    </button>
+                  </div>
+
+                  {/* 管理按钮 */}
+                  {viewMode === 'public' && isAdmin && (
+                    <button
+                      onClick={() => {
+                        setShowAdminPanel(true);
+                        setShowUserPanel(false);
+                      }}
+                      className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                    >
+                      <Settings className="w-4 h-4 inline mr-1" />
+                      管理公共
+                    </button>
+                  )}
+                  
+                  {viewMode === 'user' && (
+                    <button
+                      onClick={() => {
+                        setShowUserPanel(true);
+                        setShowAdminPanel(false);
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      <Edit className="w-4 h-4 inline mr-1" />
+                      管理我的
+                    </button>
+                  )}
+
                   <span className="text-sm text-gray-600 dark:text-gray-300">
                     {user.email}
                   </span>
-                  {isAdmin && (
-                    <button
-                      onClick={() => setShowAdminPanel(true)}
-                      className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-                    >
-                      管理公共导航
-                    </button>
-                  )}
+                  
                   <button
                     onClick={handleLogout}
                     className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1"
@@ -690,8 +770,29 @@ export default function App() {
         </div>
       </header>
 
-      {/* 移动端搜索框 */}
+      {/* 移动端搜索框和视图切换 */}
       <div className="md:hidden p-4">
+        <div className="mb-3 flex border rounded overflow-hidden">
+          {user && (
+            <>
+              <button
+                onClick={() => setViewMode('public')}
+                className={`flex-1 py-2 flex items-center justify-center gap-1 ${viewMode === 'public' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
+              >
+                <Home className="w-4 h-4" />
+                <span>公共</span>
+              </button>
+              <button
+                onClick={() => setViewMode('user')}
+                className={`flex-1 py-2 flex items-center justify-center gap-1 ${viewMode === 'user' ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
+              >
+                <User className="w-4 h-4" />
+                <span>我的</span>
+              </button>
+            </>
+          )}
+        </div>
+        
         <input
           type="text"
           value={searchTerm}
@@ -703,25 +804,60 @@ export default function App() {
 
       {/* 主内容区 */}
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <PublicNav 
-          navData={publicNav} 
-          searchTerm={debouncedSearch} 
-        />
+        {!user && viewMode === 'user' ? (
+          <div className="text-center py-12">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-8">
+              <User className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">请先登录</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">登录后可以管理个人导航</p>
+              <button
+                onClick={() => setShowLogin(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                立即登录
+              </button>
+            </div>
+          </div>
+        ) : (
+          <PublicNav 
+            navData={currentNavData} 
+            searchTerm={debouncedSearch} 
+          />
+        )}
       </main>
 
       {/* 模态框 */}
       {showLogin && (
         <LoginModal 
           onClose={() => setShowLogin(false)} 
-          onLogin={(user) => setUser(user)}
+          onLogin={(user) => {
+            setUser(user);
+            setViewMode('user');
+          }}
         />
       )}
       
+      {/* 管理员面板 */}
       {showAdminPanel && isAdmin && (
-        <AdminPanel 
+        <NavManagerPanel
+          title="管理公共导航"
+          icon={Settings}
           navData={publicNav}
           setNavData={setPublicNav}
           onClose={() => setShowAdminPanel(false)}
+          isAdmin={true}
+        />
+      )}
+
+      {/* 用户面板 */}
+      {showUserPanel && user && (
+        <NavManagerPanel
+          title="管理我的导航"
+          icon={User}
+          navData={userNav}
+          setNavData={setUserNav}
+          onClose={() => setShowUserPanel(false)}
+          isAdmin={false}
         />
       )}
     </div>
