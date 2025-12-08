@@ -182,6 +182,41 @@ const Panel = ({ navData, setNavData, user, isAdmin }) => {
   );
 };
 
+const LoginModal = ({ onClose, onLogin }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      onLogin && onLogin(data.user);
+      onClose();
+    } catch (err) {
+      alert('登录失败: ' + (err?.message || err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <button onClick={onClose} className="float-right"><X /></button>
+        <h3 className="text-xl font-bold mb-4">登录</h3>
+        <form onSubmit={submit} className="space-y-3">
+          <input type="email" className="w-full p-3 border rounded dark:bg-gray-600" placeholder="邮箱" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input type="password" className="w-full p-3 border rounded dark:bg-gray-600" placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">{loading ? '登录中...' : '登录'}</button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const Footer = ({ setCurrentPage }) => {
   const year = new Date().getFullYear();
   const runningDays = Math.floor((new Date() - SITE_START_DATE) / (1000 * 60 * 60 * 24));
@@ -217,5 +252,80 @@ const DisclaimerPage = () => (
   </div>
 );
 
-export default Panel;
-export { PublicNav, AboutPage, DisclaimerPage, Footer, LinkForm, LinkCard, LinkIcon };
+export default function App() {
+  const [navData, setNavData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState('home');
+  const [showLogin, setShowLogin] = useState(false);
+  const [user, setUser] = useState(null);
+  const [showPanel, setShowPanel] = useState(false);
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data?.session?.user || null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user || null));
+    return () => sub?.subscription?.unsubscribe && sub.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const { data, error } = await supabase.from('nav_categories').select().order('sort_order', { ascending: true });
+        if (error) throw error;
+        setNavData(data || DEFAULT_NAV_DATA);
+      } catch (e) {
+        console.error('加载数据失败，使用默认数据', e);
+        setNavData(DEFAULT_NAV_DATA);
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  const renderContent = () => {
+    if (currentPage === 'about') return <AboutPage />;
+    if (currentPage === 'disclaimer') return <DisclaimerPage />;
+    return (
+      <>
+        <PublicNav navData={navData} searchTerm={searchTerm} />
+        {user && showPanel && <Panel navData={navData} setNavData={setNavData} user={user} isAdmin={isAdmin} />}
+      </>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020]">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">极速导航网</h1>
+            <input type="text" placeholder="搜索..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="p-2 border rounded dark:bg-gray-600" />
+          </div>
+          <div>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowPanel(!showPanel)} className="px-3 py-1 bg-green-600 text-white rounded">{showPanel ? '关闭面板' : '打开面板'}</button>
+                <button onClick={handleLogout} className="px-3 py-1 bg-red-600 text-white rounded">退出</button>
+              </div>
+            ) : (
+              <button onClick={() => setShowLogin(true)} className="px-3 py-1 bg-blue-600 text-white rounded">登录</button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="pt-24 px-4">
+        {renderContent()}
+      </main>
+
+      <Footer setCurrentPage={setCurrentPage} />
+
+      {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={setUser} />}
+    </div>
+  );
+}
