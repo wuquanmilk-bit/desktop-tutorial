@@ -41,7 +41,12 @@ const LinkIcon = React.memo(({ link }) => {
       {!src || err ? (
         <ExternalLink className="w-5 h-5 text-blue-500" />
       ) : (
-         setErr(true)} />
+        <img 
+          src={src} 
+          alt={link.name} 
+          className="w-6 h-6 object-contain" 
+          onError={() => setErr(true)}  // 修正这里：移除了多余的大括号
+        />
       )}
     </div>
   );
@@ -375,7 +380,6 @@ const UserPanel = ({ user, userNav, setUserNav }) => {
     }
     
     try {
-      // 获取当前分类
       const { data: categoryData, error: fetchError } = await supabase
         .from('nav_user_categories')
         .select('links')
@@ -385,7 +389,6 @@ const UserPanel = ({ user, userNav, setUserNav }) => {
         
       if (fetchError) throw fetchError;
       
-      // 构建新链接
       const currentLinks = categoryData.links || [];
       const linkToAdd = {
         id: `link-${Date.now()}`,
@@ -397,7 +400,6 @@ const UserPanel = ({ user, userNav, setUserNav }) => {
       
       const updatedLinks = [...currentLinks, linkToAdd];
       
-      // 更新数据库
       const { data, error } = await supabase
         .from('nav_user_categories')
         .update({ links: updatedLinks })
@@ -502,7 +504,6 @@ const UserPanel = ({ user, userNav, setUserNav }) => {
                 ))}
               </div>
 
-              {/* 添加链接的表单 */}
               <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
                 <h5 className="font-medium mb-2">添加新链接</h5>
                 <div className="space-y-2">
@@ -618,4 +619,222 @@ const RegisterModal = ({ onClose }) => {
         <h3 className="text-xl font-bold mb-4">注册</h3>
         <form onSubmit={submit} className="space-y-3">
           <input type="email" className="w-full p-3 border rounded dark:bg-gray-600" placeholder="邮箱" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input type="password
+          <input type="password" className="w-full p-3 border rounded dark:bg-gray-600" placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <button type="submit" className="w-full py-2 bg-green-600 text-white rounded">{loading ? '注册中...' : '注册'}</button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const Footer = ({ setCurrentPage }) => {
+  const year = new Date().getFullYear();
+  return (
+    <footer className="mt-12 py-8">
+      <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
+        <div>© {year} 极速导航网 · 由 第一象限 制作</div>
+        <div className="mt-2">
+          <button className="mr-4 hover:text-blue-600" onClick={() => setCurrentPage('about')}>关于</button>
+          <button className="hover:text-blue-600" onClick={() => setCurrentPage('disclaimer')}>免责声明</button>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+const ExternalSearchBar = ({ keyword }) => {
+  if (!keyword || !keyword.trim()) return null;
+  const engines = [
+    { name: 'Google', url: `https://www.google.com/search?q=${encodeURIComponent(keyword)}` },
+    { name: 'Bing', url: `https://www.bing.com/search?q=${encodeURIComponent(keyword)}` },
+    { name: '百度', url: `https://www.baidu.com/s?wd=${encodeURIComponent(keyword)}` },
+  ];
+  return (
+    <div className="mt-2 flex gap-2 flex-wrap">
+      {engines.map((e) => (
+        <a key={e.name} href={e.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">使用 {e.name} 搜索 “{keyword}”</a>
+      ))}
+    </div>
+  );
+};
+
+// ----------------- App -----------------
+export default function App() {
+  const [publicNav, setPublicNav] = useState([]);
+  const [userNav, setUserNav] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 180);
+  const [currentPage, setCurrentPage] = useState('home');
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [user, setUser] = useState(null);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showUserPanel, setShowUserPanel] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data?.session?.user || null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user || null));
+    return () => { 
+      try { 
+        sub?.subscription?.unsubscribe && sub.subscription.unsubscribe(); 
+      } catch (e) {} 
+    };
+  }, []);
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
+  useEffect(() => {
+    const load = async () => {
+      setLoadingData(true);
+      const cache = localStorage.getItem(CACHE_KEY);
+      if (cache) {
+        try { 
+          setPublicNav(JSON.parse(cache)); 
+        } catch { 
+          setPublicNav([]); 
+        }
+      }
+      try {
+        const { data, error } = await supabase
+          .from('nav_categories')
+          .select('*')
+          .order('sort_order', { ascending: true });
+          
+        if (error) throw error;
+        setPublicNav(data || []);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data || []));
+      } catch (e) {
+        console.error('加载公共导航失败', e);
+        if (!cache) setPublicNav([]);
+      } finally { 
+        setLoadingData(false); 
+      }
+    };
+    load();
+  }, []);
+
+  const handleLogout = async () => { 
+    await supabase.auth.signOut(); 
+    setUser(null); 
+    setShowUserPanel(false); 
+  };
+
+  useEffect(() => {
+    const fn = (e) => { 
+      if (e.key === '/') { 
+        e.preventDefault(); 
+        document.querySelector('#searchInput')?.focus(); 
+      } 
+    };
+    window.addEventListener('keydown', fn); 
+    return () => window.removeEventListener('keydown', fn);
+  }, []);
+
+  const renderContent = () => {
+    if (currentPage === 'about') return (
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold mb-3">关于本站</h2>
+        <p className="text-gray-600 dark:text-gray-300">极速导航 — 简洁、无广告的网址导航站。</p>
+      </div>
+    );
+    if (currentPage === 'disclaimer') return (
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold mb-3">免责声明</h2>
+        <p className="text-gray-600 dark:text-gray-300">本站不对外部链接内容负责。</p>
+      </div>
+    );
+
+    if (user) {
+      return (
+        <>
+          {!userNav || userNav.length === 0 ? (
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow">你的导航为空，点击“我的导航”进行添加。</div>
+          ) : (
+            <PublicNav navData={userNav} searchTerm={debouncedSearch} />
+          )}
+          {showUserPanel && <UserPanel user={user} userNav={userNav} setUserNav={setUserNav} />}
+        </>
+      );
+    }
+
+    return (
+      <>
+        {loadingData && (<div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900 rounded">正在加载数据...</div>)}
+        <PublicNav navData={publicNav} searchTerm={debouncedSearch} />
+        {isAdmin && showAdminPanel && <AdminPanel navData={publicNav} setNavData={setPublicNav} />}
+      </>
+    );
+  };
+
+  useEffect(() => {
+    if (!user) { 
+      setUserNav([]); 
+      return; 
+    }
+    const loadUser = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('nav_user_categories')
+          .select('id, category, sort_order, links')
+          .eq('user_id', user.id)
+          .order('sort_order', { ascending: true });
+          
+        if (error) throw error;
+        setUserNav(data || []);
+      } catch (e) { 
+        console.error('加载用户导航失败', e);
+      }
+    };
+    loadUser();
+  }, [user]);
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020]">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white cursor-pointer" onClick={() => { setCurrentPage('home'); setShowUserPanel(false); }}>{'极速导航网'}</h1>
+            <span className="text-sm text-gray-500 dark:text-gray-300 hidden sm:inline">你的快速入口</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden md:block w-[420px] relative">
+              <input id="searchInput" type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="搜索链接、描述或网址... (按 / 聚焦)" className="w-full px-3 py-2 rounded-full border bg-white dark:bg-gray-700 dark:border-gray-600" />
+              <ExternalSearchBar keyword={searchTerm} />
+            </div>
+
+            {!user ? (
+              <>
+                <button onClick={() => setShowLogin(true)} className="px-3 py-2 bg-blue-600 text-white rounded">登录</button>
+                <button onClick={() => setShowRegister(true)} className="px-3 py-2 border rounded">注册</button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setShowUserPanel(!showUserPanel)} className="px-3 py-2 border rounded">我的导航</button>
+                {isAdmin && <button onClick={() => setShowAdminPanel(!showAdminPanel)} className="px-3 py-2 bg-purple-600 text-white rounded">管理员</button>}
+                <button onClick={handleLogout} className="px-3 py-2 bg-red-500 text-white rounded">退出</button>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="h-20" />
+
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        <div className="md:hidden mb-4">
+          <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="搜索链接..." className="w-full px-3 py-2 rounded-full border bg-white dark:bg-gray-700 dark:border-gray-600" />
+          <ExternalSearchBar keyword={searchTerm} />
+        </div>
+
+        <div className="space-y-6">{renderContent()}</div>
+
+        <Footer setCurrentPage={setCurrentPage} />
+      </main>
+
+      {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLogin={(u) => { setUser(u); setShowLogin(false); }} />}
+      {showRegister && <RegisterModal onClose={() => setShowRegister(false)} />}
+    </div>
+  );
+}
