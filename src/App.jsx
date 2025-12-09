@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key } from 'lucide-react';
 import './index.css';
@@ -132,36 +132,41 @@ async function savePublicNavToDB(navData) {
   if (error) throw error;
 }
 
-// **数据保存：用户导航 (调用 RPC)**
+// 🚀🚀🚀🚀🚀 最终修复函数 🚀🚀🚀🚀🚀
+// **数据保存：用户导航 (调用 RPC) - 个人导航保存修复**
 async function saveUserNavToDB(userId, navData) {
-  const categoriesToSave = navData.map(c => ({ 
-    id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
-    category: c.category, 
-    sort_order: c.sort_order,
-    user_id: userId
-  }));
+    
+    // ✅ 修复 1：强制使用数组索引 (index) 作为 sort_order，避免前端产生的大数导致 'value out of range' 错误。
+    const categoriesToSave = navData.map((c, index) => ({ 
+        id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
+        category: c.category, 
+        sort_order: index, // <--- 修正为数组索引
+        user_id: userId
+    }));
 
-  const linksToSave = navData.flatMap(c => 
-    c.links.map(l => ({ 
-      category_id: c.id, 
-      user_id: userId,
-      name: l.name, 
-      url: l.url, 
-      description: l.description, 
-      icon: l.icon, 
-      sort_order: l.sort_order || 0,
-      id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
-    }))
-  );
-  
-  const { error } = await supabase.rpc('sync_user_nav', {
-    user_id: userId,
-    categories_data: categoriesToSave,
-    links_data: linksToSave
-  });
+    const linksToSave = navData.flatMap(c => 
+        c.links.map((l, index) => ({ 
+            category_id: c.id, 
+            user_id: userId,
+            name: l.name, 
+            url: l.url, 
+            description: l.description, 
+            icon: l.icon, 
+            sort_order: index, // <--- 修正为数组索引
+            id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
+        }))
+    );
+    
+    // ✅ 修复 2：将 RPC 参数名 'user_id' 替换为 'p_user_id'，以匹配 PostgreSQL 函数签名，解决 400 Bad Request 错误。
+    const { error } = await supabase.rpc('sync_user_nav', {
+        p_user_id: userId, // <-- 关键修复：参数名称必须是 p_user_id
+        categories_data: categoriesToSave,
+        links_data: linksToSave
+    });
 
-  if (error) throw error;
+    if (error) throw error;
 }
+// 🚀🚀🚀🚀🚀 修复结束 🚀🚀🚀🚀🚀
 
 // ====================================================================
 // 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
@@ -813,9 +818,8 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
 };
 
 // ====================================================================
-// AuthModal, WelcomeModal (认证和欢迎组件 - 保持不变)
+// AuthModal, WelcomeModal (认证和欢迎组件)
 // ====================================================================
-// (AuthModal 和 WelcomeModal 代码为了简洁在此省略，但它们在您提供的完整文件中)
 const AuthModal = ({ onClose, onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -840,7 +844,7 @@ const AuthModal = ({ onClose, onLogin }) => {
     
     try {
       if (isRegister) {
-        const { data, error } = await supabase.auth.signUp({ 
+        const { error } = await supabase.auth.signUp({ 
           email, 
           password,
           options: {
@@ -1147,7 +1151,7 @@ export default function App() {
       // 站内搜索由 debouncedSearch 状态自动触发 PublicNav 过滤
   };
 
-  // 键盘快捷键 (保持不变)
+  // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -1321,7 +1325,7 @@ export default function App() {
         <AdminPanel 
           navData={publicNav} 
           setNavData={setPublicNav} 
-          onSave={handleSavePublicNav} // ✅ 修复：传递公共导航保存函数
+          onSave={handleSavePublicNav} // 传递公共导航保存函数
           onClose={() => setShowAdminPanel(false)} 
         />
       )}
@@ -1330,7 +1334,7 @@ export default function App() {
           user={user} 
           userNav={userNav} 
           setUserNav={setUserNav} 
-          onSave={handleSaveUserNav} // ✅ 修复：传递用户导航保存函数
+          onSave={handleSaveUserNav} // 传递用户导航保存函数
           onClose={() => setShowUserPanel(false)} 
         />
       )}
