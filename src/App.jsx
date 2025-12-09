@@ -158,7 +158,7 @@ async function saveUserNavToDB(userId, navData) {
     );
     
     // ✅ 修复 2：将 RPC 参数名 'user_id' 替换为 'p_user_id'，以匹配 PostgreSQL 函数签名，解决 400 Bad Request 错误。
-    const { error } = await supabase.rpc('sync_user_nav', {
+    const { error } = await supabase.rpc('sync_my_nav', {
         p_user_id: userId, // <-- 关键修复：参数名称必须是 p_user_id
         categories_data: categoriesToSave,
         links_data: linksToSave
