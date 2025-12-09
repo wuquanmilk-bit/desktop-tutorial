@@ -43,7 +43,7 @@ const DEFAULT_PUBLIC_NAV = [
 ];
 
 // ====================================================================
-// 核心数据同步函数 (基于关系型数据库的加载和保存逻辑)
+// 核心数据同步函数
 // ====================================================================
 
 // **数据加载：公共导航**
@@ -107,7 +107,6 @@ async function fetchUserNav(userId) {
 // **数据保存：公共导航 (调用 RPC)**
 async function savePublicNavToDB(navData) {
   const categoriesToSave = navData.map(c => ({ 
-    // 检查 ID 是否为数字，如果不是数字（新添加的分类），则设为 null
     id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
     category: c.category, 
     sort_order: c.sort_order 
@@ -121,7 +120,6 @@ async function savePublicNavToDB(navData) {
       description: l.description, 
       icon: l.icon, 
       sort_order: l.sort_order || 0,
-      // 解析前端ID，新链接 ID 为 null
       id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
     }))
   );
@@ -166,7 +164,7 @@ async function saveUserNavToDB(userId, navData) {
 }
 
 // ====================================================================
-// 核心组件 (包含用户提供的所有组件逻辑)
+// 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
 // ====================================================================
 
 // 链接图标组件
@@ -317,7 +315,7 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
 };
 
 // ====================================================================
-// AdminPanel (已集成 onSave 逻辑)
+// AdminPanel (管理面板组件)
 // ====================================================================
 const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   const [newCategory, setNewCategory] = useState({ category: '', sort_order: 0 });
@@ -326,7 +324,6 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   const [editingLink, setEditingLink] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 排序导航数据，确保前端界面排序与 sort_order 一致
   const sortedNavData = useMemo(() => {
     return [...navData].sort((a, b) => a.sort_order - b.sort_order);
   }, [navData]);
@@ -336,9 +333,6 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
       alert('请输入分类名称');
       return;
     }
-    
-    // 使用 Math.random() 结合时间戳生成一个唯一的临时数字 ID，确保不与数据库 ID 冲突
-    // 数据库 ID 通常从 1 开始，我们使用大的负数或特殊标记，这里使用 Date.now() 确保唯一性
     const newId = Date.now(); 
     
     const newCategoryData = {
@@ -366,13 +360,12 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
 
   const handleAddLink = (categoryId, linkData) => {
     const newLink = {
-      // 临时 ID，等待数据库分配正式 ID
       id: `link-temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: linkData.name,
       url: linkData.url,
       description: linkData.description || '',
       icon: null,
-      sort_order: 999, // 新增链接排在最后
+      sort_order: 999,
     };
     
     setNavData(prev => 
@@ -390,7 +383,6 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   const saveEditLink = (linkData) => {
     if (!editingLink) return;
     
-    // 确保 id 属性被保留
     const updatedLink = { ...linkData, id: editingLink.id }; 
     
     setNavData(prev => 
@@ -417,7 +409,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   const handleSave = async () => {
       setLoading(true);
       try {
-          // 调用从 App.jsx 传入的 onSave 函数
+          // *** 关键：调用 App 组件传入的 onSave prop ***
           await onSave(); 
       } catch (e) {
           console.error("保存失败:", e);
@@ -483,10 +475,8 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <h4 className="font-semibold text-lg">{category.category}</h4>
-                    {/* ID 在前端显示为 'link-123' 或一个大数字（临时ID） */}
                     <p className="text-sm text-gray-500">
                         排序: {category.sort_order} | 链接数: {(category.links || []).length} 
-                        {/* 临时ID标记，方便调试 */}
                         {typeof category.id !== 'number' && <span className="text-red-500 ml-2">(新ID)</span>}
                     </p>
                   </div>
@@ -574,7 +564,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
 };
 
 // ====================================================================
-// UserPanel (已集成 onSave 逻辑)
+// UserPanel (用户面板组件)
 // ====================================================================
 const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
   const [newCategory, setNewCategory] = useState({ category: '', sort_order: 0 });
@@ -667,6 +657,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
   const handleSave = async () => {
       setLoading(true);
       try {
+          // *** 关键：调用 App 组件传入的 onSave prop ***
           await onSave(); 
       } catch (e) {
           console.error("保存失败:", e);
@@ -821,7 +812,10 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
   );
 };
 
-// 登录/注册模态框
+// ====================================================================
+// AuthModal, WelcomeModal (认证和欢迎组件 - 保持不变)
+// ====================================================================
+// (AuthModal 和 WelcomeModal 代码为了简洁在此省略，但它们在您提供的完整文件中)
 const AuthModal = ({ onClose, onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -846,7 +840,6 @@ const AuthModal = ({ onClose, onLogin }) => {
     
     try {
       if (isRegister) {
-        // 注册
         const { data, error } = await supabase.auth.signUp({ 
           email, 
           password,
@@ -860,7 +853,6 @@ const AuthModal = ({ onClose, onLogin }) => {
         setEmail('');
         setPassword('');
       } else {
-        // 登录
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         onLogin && onLogin(data.user);
@@ -956,8 +948,6 @@ const AuthModal = ({ onClose, onLogin }) => {
     </div>
   );
 };
-
-// 欢迎新用户组件
 const WelcomeModal = ({ onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -1000,7 +990,6 @@ const WelcomeModal = ({ onClose }) => {
     </div>
   );
 };
-
 // ====================================================================
 // 主应用组件
 // ====================================================================
@@ -1016,12 +1005,21 @@ export default function App() {
   const [publicNav, setPublicNav] = useState([]);
   const [userNav, setUserNav] = useState([]);
   const [showWelcome, setShowWelcome] = useState(false);
+  
+  // 搜索相关状态
+  const [searchMode, setSearchMode] = useState('internal'); 
+  const searchEngines = useMemo(() => ([
+    { id: 'internal', name: '站内搜索', url: '#' },
+    { id: 'baidu', name: '百度', url: 'https://www.baidu.com/s?wd=' },
+    { id: 'bing', name: '必应', url: 'https://www.bing.com/search?q=' },
+    { id: 'google', name: '谷歌', url: 'https://www.google.com/search?q=' },
+  ]), []);
 
 
   const debouncedSearch = useDebounce(searchTerm, 300);
   const isAdmin = user && user.email === ADMIN_EMAIL;
-
-  // 0. 初始化和认证检查
+  
+  // 认证和数据加载
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -1030,7 +1028,6 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        // 检查新用户
         const isNew = localStorage.getItem(`first_time_${session.user.id}`) === null;
         if (isNew) {
             setShowWelcome(true);
@@ -1045,7 +1042,6 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 1. 公共导航加载 (仅在组件挂载时执行一次)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -1064,7 +1060,6 @@ export default function App() {
     }
   }, []);
 
-  // 2. 用户导航加载 (用户状态变化时执行)
   useEffect(() => {
     if (!user) {
       setUserNav([]);
@@ -1075,9 +1070,8 @@ export default function App() {
       try {
         const data = await fetchUserNav(user.id);
         if (data.length === 0) {
-            // 如果用户导航为空，提供默认的“我的收藏”分类
             setUserNav([{
-                id: Date.now(), // 临时 ID
+                id: Date.now(), 
                 user_id: user.id,
                 category: '我的收藏',
                 sort_order: 1,
@@ -1096,48 +1090,42 @@ export default function App() {
     loadData();
   }, [user]);
   
-  // 3. 核心保存函数 - 公共导航
+  // 核心保存函数
   const handleSavePublicNav = async () => {
     if (!isAdmin) return;
     setLoading(true);
     try {
       await savePublicNavToDB(publicNav);
       alert('✅ 公共导航保存成功！正在刷新数据...');
-      
-      // 重新加载数据以获取新的数据库ID
       const updatedNav = await fetchPublicNav();
       setPublicNav(updatedNav);
       setShowAdminPanel(false);
     } catch (e) {
       alert('❌ 保存公共导航失败。请检查 Supabase RPC 函数和管理员权限。');
       console.error('保存公共导航失败:', e);
-      throw e; // 抛出错误，以便在 AdminPanel 中捕获
+      throw e;
     } finally {
       setLoading(false);
     }
   };
 
-  // 4. 核心保存函数 - 用户导航
   const handleSaveUserNav = async () => {
     if (!user) return;
     setLoading(true);
     try {
       await saveUserNavToDB(user.id, userNav);
       alert('✅ 我的导航保存成功！正在刷新数据...');
-      
-      // 重新加载数据以获取新的数据库ID
       const updatedNav = await fetchUserNav(user.id);
       setUserNav(updatedNav);
       setShowUserPanel(false);
     } catch (e) {
       alert('❌ 保存我的导航失败。请检查 Supabase RPC 函数和用户权限。');
       console.error('保存我的导航失败:', e);
-      throw e; // 抛出错误，以便在 UserPanel 中捕获
+      throw e; 
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -1145,7 +1133,21 @@ export default function App() {
     setViewMode('public');
   };
 
-  // 键盘快捷键 (保留原有逻辑)
+  // 站外搜索提交函数
+  const handleSearchSubmit = (e) => {
+      e.preventDefault();
+      if (!searchTerm.trim()) return;
+
+      if (searchMode !== 'internal') {
+          const engine = searchEngines.find(e => e.id === searchMode);
+          if (engine) {
+              window.open(engine.url + encodeURIComponent(searchTerm), '_blank');
+          }
+      }
+      // 站内搜索由 debouncedSearch 状态自动触发 PublicNav 过滤
+  };
+
+  // 键盘快捷键 (保持不变)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -1156,7 +1158,7 @@ export default function App() {
       if (e.metaKey || e.ctrlKey) {
         if (e.key === 'k') {
           e.preventDefault();
-          const searchInput = document.getElementById('search-input');
+          const searchInput = document.getElementById('searchInput');
           if (searchInput) searchInput.focus();
         } else if (e.key === 'a' && isAdmin) {
           e.preventDefault();
@@ -1166,7 +1168,6 @@ export default function App() {
           setShowUserPanel(true);
         }
       }
-      // 聚焦搜索框的快捷键
       if (e.key === '/' && !e.target.matches('input, textarea')) {
         e.preventDefault();
         document.getElementById('searchInput')?.focus();
@@ -1177,44 +1178,37 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isAdmin, user]);
   
-  // 渲染逻辑修正：无论是否登录，先尝试加载公共导航
+  // 渲染逻辑
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020] text-gray-900 dark:text-white">
-      {/* 顶部导航栏 */}
+      {/* 顶部导航栏 - 重构结构实现居中和堆叠 */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 py-4">
+          
+          {/* 顶行：居中标题和用户操作 */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">极速导航</h1>
-              <span className="text-sm text-gray-500 dark:text-gray-300 hidden sm:inline">快速入口</span>
+            <div className="w-1/3"></div> 
+            
+            {/* 居中标题 */}
+            <div className="text-center flex-1 min-w-0">
+              <h1 className="text-3xl font-extrabold text-gray-800 dark:text-white whitespace-nowrap">
+                极速导航网
+              </h1>
             </div>
-
-            <div className="flex items-center gap-3">
-              {/* 搜索框 */}
-              <div className="hidden md:block w-[320px]">
-                <input
-                  id="searchInput"
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="搜索链接... (按 / 聚焦)"
-                  className="w-full px-3 py-2 rounded-full border bg-white dark:bg-gray-700 dark:border-gray-600"
-                />
-              </div>
-
-              {/* 用户操作 */}
+            
+            {/* 右侧：用户操作 */}
+            <div className="flex items-center gap-3 w-1/3 justify-end">
+              
               {!user ? (
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setShowAuth(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    登录/注册
-                  </button>
-                </div>
+                <button 
+                  onClick={() => setShowAuth(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap"
+                >
+                  登录/注册
+                </button>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:inline">
+                  <span className="text-sm text-gray-600 dark:text-gray-300 hidden lg:inline truncate max-w-[100px]">
                     {user.email}
                   </span>
                   {isAdmin && (
@@ -1244,19 +1238,48 @@ export default function App() {
               )}
             </div>
           </div>
+
+          {/* 第二行：全宽搜索框和选择器 */}
+          <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-2 w-full">
+              
+              {/* 模式选择器 */}
+              <select
+                  value={searchMode}
+                  onChange={(e) => {
+                      setSearchMode(e.target.value);
+                      if (e.target.value !== 'internal') {
+                          setSearchTerm(''); // 切换到站外搜索时，清空站内搜索的过滤结果
+                      }
+                  }}
+                  className="p-2 border rounded-l-full dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+              >
+                  {searchEngines.map(engine => (
+                      <option key={engine.id} value={engine.id}>
+                          {engine.name}
+                      </option>
+                  ))}
+              </select>
+
+              {/* 搜索输入框 */}
+              <input
+                  id="searchInput"
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={searchMode === 'internal' ? '搜索站内链接... (按 / 聚焦)' : `使用 ${searchEngines.find(e => e.id === searchMode).name} 搜索...`}
+                  className="flex-1 px-4 py-2 rounded-r-full border dark:bg-gray-700 dark:border-gray-600"
+              />
+              
+              {/* 提交按钮（对站外搜索有效） */}
+              {searchMode !== 'internal' && (
+                  <button type="submit" className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 flex items-center justify-center">
+                      <Search className="w-5 h-5" />
+                  </button>
+              )}
+          </form>
+
         </div>
       </header>
-
-      {/* 移动端搜索框 */}
-      <div className="md:hidden p-4">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="搜索链接..."
-          className="w-full px-3 py-2 rounded-full border bg-white dark:bg-gray-700 dark:border-gray-600"
-        />
-      </div>
 
       {/* 视图切换按钮（用户登录时显示） */}
       {user && (
@@ -1281,52 +1304,49 @@ export default function App() {
       {/* 主内容区 */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         {loading ? (
-          // 数据加载动画
           <div className="text-center py-20 text-gray-500 dark:text-gray-400">
             <Search className="w-8 h-8 mx-auto animate-spin mb-2" /> 正在加载导航数据...
           </div>
         ) : (
           <PublicNav 
             navData={user && viewMode === 'user' ? userNav : publicNav} 
-            searchTerm={debouncedSearch} 
+            searchTerm={searchMode === 'internal' ? debouncedSearch : ''} 
           />
         )}
       </main>
 
-      {/* 模态框 */}
-      {showAuth && (
-        <AuthModal 
-          onClose={() => setShowAuth(false)} 
-          onLogin={(u) => {
-            setUser(u);
-            setShowAuth(false);
-            // 登录后，用户导航会自动加载，用户可以通过切换按钮选择视图
-          }}
-        />
-      )}
-      
+      {/* 模态框 - 已修复 onSave 属性 */}
+      {showAuth && (<AuthModal onClose={() => setShowAuth(false)} onLogin={(u) => { setUser(u); setShowAuth(false); }}/>)}
       {showAdminPanel && isAdmin && (
         <AdminPanel 
-          navData={publicNav}
-          setNavData={setPublicNav}
-          onSave={handleSavePublicNav} // <-- 传递保存函数
-          onClose={() => setShowAdminPanel(false)}
+          navData={publicNav} 
+          setNavData={setPublicNav} 
+          onSave={handleSavePublicNav} // ✅ 修复：传递公共导航保存函数
+          onClose={() => setShowAdminPanel(false)} 
         />
       )}
-      
       {showUserPanel && user && (
         <UserPanel 
-          user={user}
-          userNav={userNav}
-          setUserNav={setUserNav}
-          onSave={handleSaveUserNav} // <-- 传递保存函数
-          onClose={() => setShowUserPanel(false)}
+          user={user} 
+          userNav={userNav} 
+          setUserNav={setUserNav} 
+          onSave={handleSaveUserNav} // ✅ 修复：传递用户导航保存函数
+          onClose={() => setShowUserPanel(false)} 
         />
       )}
+      {showWelcome && (<WelcomeModal onClose={() => setShowWelcome(false)} />)}
       
-      {showWelcome && (
-        <WelcomeModal onClose={() => setShowWelcome(false)} />
-      )}
+      {/* 页尾 */}
+      <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
+        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p>&copy; {new Date().getFullYear()} 极速导航网. All rights reserved. | Powered by Supabase & React.</p>
+          <p className="mt-2">
+            <a href="#" className="hover:text-blue-500">联系我们</a> | 
+            <a href="#" className="hover:text-blue-500 ml-2">隐私政策</a>
+          </p>
+        </div>
+      </footer>
+
     </div>
   );
 }
