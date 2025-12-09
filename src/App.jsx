@@ -4,7 +4,9 @@ import { supabase } from './supabaseClient';
 import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key } from 'lucide-react';
 import './index.css';
 
+// ====================================================================
 // 配置
+// ====================================================================
 const ADMIN_EMAIL = '115382613@qq.com';
 
 // 工具函数
@@ -17,7 +19,7 @@ function useDebounce(value, delay = 200) {
   return v;
 }
 
-// 默认数据
+// 默认数据 (数据库加载失败时的回退)
 const DEFAULT_PUBLIC_NAV = [
   {
     id: 1,
@@ -40,14 +42,141 @@ const DEFAULT_PUBLIC_NAV = [
   }
 ];
 
-// 组件
+// ====================================================================
+// 核心数据同步函数 (基于关系型数据库的加载和保存逻辑)
+// ====================================================================
+
+// **数据加载：公共导航**
+async function fetchPublicNav() {
+  const { data: categories, error: catError } = await supabase
+    .from('nav_categories')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (catError) throw catError;
+
+  const { data: links, error: linkError } = await supabase
+    .from('nav_links')
+    .select('*');
+
+  if (linkError) throw linkError;
+
+  return categories.map(cat => ({
+    ...cat,
+    links: links
+      .filter(link => link.category_id === cat.id)
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      .map(link => ({ 
+        ...link, 
+        id: `link-${link.id}`, // 将数据库ID转换为前端ID格式
+        category_id: cat.id
+      })) 
+  }));
+}
+
+// **数据加载：用户导航**
+async function fetchUserNav(userId) {
+  const { data: categories, error: catError } = await supabase
+    .from('nav_user_categories')
+    .select('*')
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true });
+
+  if (catError) throw catError;
+
+  const { data: links, error: linkError } = await supabase
+    .from('nav_user_links')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (linkError) throw linkError;
+
+  return categories.map(cat => ({
+    ...cat,
+    links: links
+      .filter(link => link.category_id === cat.id)
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      .map(link => ({ 
+        ...link, 
+        id: `link-${link.id}`, 
+        category_id: cat.id 
+      })) 
+  }));
+}
+
+// **数据保存：公共导航 (调用 RPC)**
+async function savePublicNavToDB(navData) {
+  const categoriesToSave = navData.map(c => ({ 
+    // 检查 ID 是否为数字，如果不是数字（新添加的分类），则设为 null
+    id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
+    category: c.category, 
+    sort_order: c.sort_order 
+  }));
+
+  const linksToSave = navData.flatMap(c => 
+    c.links.map(l => ({ 
+      category_id: c.id, 
+      name: l.name, 
+      url: l.url, 
+      description: l.description, 
+      icon: l.icon, 
+      sort_order: l.sort_order || 0,
+      // 解析前端ID，新链接 ID 为 null
+      id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
+    }))
+  );
+
+  const { error } = await supabase.rpc('sync_public_nav', {
+    categories_data: categoriesToSave,
+    links_data: linksToSave
+  });
+
+  if (error) throw error;
+}
+
+// **数据保存：用户导航 (调用 RPC)**
+async function saveUserNavToDB(userId, navData) {
+  const categoriesToSave = navData.map(c => ({ 
+    id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
+    category: c.category, 
+    sort_order: c.sort_order,
+    user_id: userId
+  }));
+
+  const linksToSave = navData.flatMap(c => 
+    c.links.map(l => ({ 
+      category_id: c.id, 
+      user_id: userId,
+      name: l.name, 
+      url: l.url, 
+      description: l.description, 
+      icon: l.icon, 
+      sort_order: l.sort_order || 0,
+      id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
+    }))
+  );
+  
+  const { error } = await supabase.rpc('sync_user_nav', {
+    user_id: userId,
+    categories_data: categoriesToSave,
+    links_data: linksToSave
+  });
+
+  if (error) throw error;
+}
+
+// ====================================================================
+// 核心组件 (包含用户提供的所有组件逻辑)
+// ====================================================================
+
 // 链接图标组件
 const LinkIcon = ({ link }) => {
   const [err, setErr] = useState(false);
-  const src = link.icon || `https://icons.duckduckgo.com/ip3/${new URL(link.url).hostname}.ico`;
+  // 使用 link.icon 或 DuckDuckGo 的 favicon 服务
+  const src = link.icon || (link.url ? `https://icons.duckduckgo.com/ip3/${new URL(link.url).hostname}.ico` : null);
   
   return (
-    <div className="w-10 h-10 rounded-lg border bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
+    <div className="w-10 h-10 rounded-lg border bg-gray-50 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
       {!src || err ? (
         <ExternalLink className="w-5 h-5 text-blue-500" />
       ) : (
@@ -77,7 +206,7 @@ const LinkCard = ({ link }) => (
         <p className="text-sm text-gray-500 dark:text-gray-300 truncate">{link.description}</p>
       )}
     </div>
-    <ExternalLink className="w-4 h-4 text-gray-400" />
+    <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
   </a>
 );
 
@@ -144,11 +273,11 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg space-y-3">
+    <form onSubmit={handleSubmit} className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg space-y-3">
       <h4 className="font-semibold">{mode === 'add' ? '添加链接' : '编辑链接'}</h4>
       <input
         type="text"
-        className="w-full p-2 border rounded dark:bg-gray-600"
+        className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
         placeholder="链接名称 *"
         value={formData.name}
         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -156,7 +285,7 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
       />
       <input
         type="url"
-        className="w-full p-2 border rounded dark:bg-gray-600"
+        className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
         placeholder="链接地址 * (https://...)"
         value={formData.url}
         onChange={(e) => setFormData({ ...formData, url: e.target.value })}
@@ -164,7 +293,7 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
       />
       <input
         type="text"
-        className="w-full p-2 border rounded dark:bg-gray-600"
+        className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
         placeholder="描述 (可选)"
         value={formData.description}
         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -177,7 +306,7 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
           <button 
             type="button" 
             onClick={onCancel}
-            className="px-4 py-2 border rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+            className="px-4 py-2 border rounded hover:bg-gray-200 dark:hover:bg-gray-600"
           >
             取消
           </button>
@@ -187,175 +316,214 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
   );
 };
 
-// 管理员面板
-const AdminPanel = ({ navData = [], setNavData, onClose }) => {
+// ====================================================================
+// AdminPanel (已集成 onSave 逻辑)
+// ====================================================================
+const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   const [newCategory, setNewCategory] = useState({ category: '', sort_order: 0 });
   const [editingCategory, setEditingCategory] = useState(null);
   const [addingLinkTo, setAddingLinkTo] = useState(null);
   const [editingLink, setEditingLink] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleAddCategory = async () => {
+  // 排序导航数据，确保前端界面排序与 sort_order 一致
+  const sortedNavData = useMemo(() => {
+    return [...navData].sort((a, b) => a.sort_order - b.sort_order);
+  }, [navData]);
+
+  const handleAddCategory = () => {
     if (!newCategory.category.trim()) {
       alert('请输入分类名称');
       return;
     }
     
-    setLoading(true);
-    try {
-      const newId = Math.max(0, ...navData.map(c => c.id)) + 1;
-      const newCategoryData = {
-        id: newId,
-        category: newCategory.category,
-        sort_order: newCategory.sort_order || 0,
-        links: []
-      };
-      setNavData(prev => [...prev, newCategoryData]);
-      setNewCategory({ category: '', sort_order: 0 });
-    } catch (e) {
-      alert('添加分类失败: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
+    // 使用 Math.random() 结合时间戳生成一个唯一的临时数字 ID，确保不与数据库 ID 冲突
+    // 数据库 ID 通常从 1 开始，我们使用大的负数或特殊标记，这里使用 Date.now() 确保唯一性
+    const newId = Date.now(); 
+    
+    const newCategoryData = {
+      id: newId,
+      category: newCategory.category,
+      sort_order: newCategory.sort_order || 0,
+      links: []
+    };
+    setNavData(prev => [...prev, newCategoryData]);
+    setNewCategory({ category: '', sort_order: 0 });
   };
 
   const startEditCategory = (cat) => setEditingCategory({ ...cat });
   const cancelEditCategory = () => setEditingCategory(null);
-  const saveEditCategory = async () => {
+  const saveEditCategory = () => {
     if (!editingCategory) return;
-    try {
-      setNavData(prev => prev.map(c => c.id === editingCategory.id ? editingCategory : c));
-      cancelEditCategory();
-    } catch (e) {
-      alert('保存失败: ' + e.message);
-    }
+    setNavData(prev => prev.map(c => c.id === editingCategory.id ? editingCategory : c));
+    cancelEditCategory();
   };
 
-  const handleDeleteCategory = async (id) => {
+  const handleDeleteCategory = (id) => {
     if (!confirm('确定删除此分类？分类下的所有链接也将被删除')) return;
-    try {
-      setNavData(prev => prev.filter(c => c.id !== id));
-    } catch (e) {
-      alert('删除失败: ' + e.message);
-    }
+    setNavData(prev => prev.filter(c => c.id !== id));
   };
 
-  const handleAddLink = async (categoryId, linkData) => {
-    try {
-      const category = navData.find(c => c.id === categoryId);
-      if (!category) return;
-      
-      const newLink = {
-        id: `link-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: linkData.name,
-        url: linkData.url,
-        description: linkData.description || '',
-        icon: null
-      };
-      
-      const updatedLinks = [...(category.links || []), newLink];
-      setNavData(prev => prev.map(c => c.id === categoryId ? { ...c, links: updatedLinks } : c));
-      setAddingLinkTo(null);
-    } catch (e) {
-      alert('添加链接失败: ' + e.message);
-    }
+  const handleAddLink = (categoryId, linkData) => {
+    const newLink = {
+      // 临时 ID，等待数据库分配正式 ID
+      id: `link-temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: linkData.name,
+      url: linkData.url,
+      description: linkData.description || '',
+      icon: null,
+      sort_order: 999, // 新增链接排在最后
+    };
+    
+    setNavData(prev => 
+      prev.map(c => 
+        c.id === categoryId
+          ? { ...c, links: [...(c.links || []), newLink] }
+          : c
+      )
+    );
+    setAddingLinkTo(null);
   };
 
   const startEditLink = (categoryId, link) => setEditingLink({ categoryId, ...link });
   const cancelEditLink = () => setEditingLink(null);
-  const saveEditLink = async (linkData) => {
+  const saveEditLink = (linkData) => {
     if (!editingLink) return;
-    try {
-      setNavData(prev => 
-        prev.map(c => 
-          c.id === editingLink.categoryId
-            ? { ...c, links: (c.links || []).map(l => l.id === editingLink.id ? { ...linkData, id: editingLink.id } : l) }
-            : c
-        )
-      );
-      cancelEditLink();
-    } catch (e) {
-      alert('保存链接失败: ' + e.message);
-    }
+    
+    // 确保 id 属性被保留
+    const updatedLink = { ...linkData, id: editingLink.id }; 
+    
+    setNavData(prev => 
+      prev.map(c => 
+        c.id === editingLink.categoryId
+          ? { ...c, links: (c.links || []).map(l => l.id === editingLink.id ? updatedLink : l) }
+          : c
+      )
+    );
+    cancelEditLink();
   };
 
-  const handleDeleteLink = async (categoryId, linkId) => {
+  const handleDeleteLink = (categoryId, linkId) => {
     if (!confirm('确定删除此链接？')) return;
-    try {
-      setNavData(prev => 
-        prev.map(c => 
-          c.id === categoryId
-            ? { ...c, links: (c.links || []).filter(l => l.id !== linkId) }
-            : c
-        )
-      );
-    } catch (e) {
-      alert('删除链接失败: ' + e.message);
-    }
+    setNavData(prev => 
+      prev.map(c => 
+        c.id === categoryId
+          ? { ...c, links: (c.links || []).filter(l => l.id !== linkId) }
+          : c
+      )
+    );
   };
+  
+  const handleSave = async () => {
+      setLoading(true);
+      try {
+          // 调用从 App.jsx 传入的 onSave 函数
+          await onSave(); 
+      } catch (e) {
+          console.error("保存失败:", e);
+      } finally {
+          setLoading(false);
+      }
+  };
+
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl my-8">
-        {/* 标题栏 */}
+        {/* 标题栏 - 添加了保存按钮 */}
         <div className="p-6 border-b flex justify-between items-center">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
             <Settings className="inline mr-2" /> 管理公共导航
           </h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex gap-3 items-center">
+            <button 
+                onClick={handleSave} 
+                className={`px-4 py-2 text-white rounded font-semibold ${loading ? 'bg-gray-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+                disabled={loading}
+            >
+                {loading ? '保存中...' : '保存公共导航'}
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {/* 新增分类区域 */}
-          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6">
+          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-6">
             <h4 className="font-semibold mb-3">新增分类</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <input
-                className="p-2 border rounded dark:bg-gray-600"
+                className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
                 placeholder="分类名称"
                 value={newCategory.category}
                 onChange={(e) => setNewCategory({ ...newCategory, category: e.target.value })}
               />
               <input
                 type="number"
-                className="p-2 border rounded dark:bg-gray-600"
+                className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
                 placeholder="排序"
                 value={newCategory.sort_order}
                 onChange={(e) => setNewCategory({ ...newCategory, sort_order: parseInt(e.target.value) || 0 })}
               />
               <button
                 onClick={handleAddCategory}
-                className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                disabled={loading}
+                className="p-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
-                {loading ? '添加中...' : '添加分类'}
+                添加分类
               </button>
             </div>
           </div>
 
           {/* 分类列表 */}
           <div className="space-y-4">
-            {navData.map(category => (
-              <div key={category.id} className="border rounded-lg p-4">
+            {sortedNavData.map(category => (
+              <div key={category.id} className="border rounded-lg p-4 bg-white dark:bg-gray-800">
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <h4 className="font-semibold text-lg">{category.category}</h4>
-                    <p className="text-sm text-gray-500">排序: {category.sort_order} | 链接数: {(category.links || []).length}</p>
+                    {/* ID 在前端显示为 'link-123' 或一个大数字（临时ID） */}
+                    <p className="text-sm text-gray-500">
+                        排序: {category.sort_order} | 链接数: {(category.links || []).length} 
+                        {/* 临时ID标记，方便调试 */}
+                        {typeof category.id !== 'number' && <span className="text-red-500 ml-2">(新ID)</span>}
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setAddingLinkTo(addingLinkTo === category.id ? null : category.id)}
-                      className="px-3 py-1 bg-green-600 text-white rounded flex items-center gap-1 hover:bg-green-700"
+                      className="px-3 py-1 bg-green-600 text-white rounded flex items-center gap-1 hover:bg-green-700 text-sm"
                     >
                       <Plus className="w-4 h-4" /> 添加链接
                     </button>
-                    <button onClick={() => startEditCategory(category)} className="px-3 py-1 bg-yellow-500 text-white rounded">编辑</button>
-                    <button onClick={() => handleDeleteCategory(category.id)} className="px-3 py-1 bg-red-600 text-white rounded">删除</button>
+                    <button onClick={() => startEditCategory(category)} className="px-3 py-1 bg-yellow-500 text-white rounded text-sm">编辑</button>
+                    <button onClick={() => handleDeleteCategory(category.id)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">删除</button>
                   </div>
                 </div>
 
+                {/* 编辑分类模态框 */}
+                {editingCategory && editingCategory.id === category.id && (
+                    <div className="my-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded space-y-3">
+                        <h4 className="font-bold">编辑分类：{editingCategory.category}</h4>
+                        <input
+                            className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                            value={editingCategory.category}
+                            onChange={(e) => setEditingCategory({ ...editingCategory, category: e.target.value })}
+                        />
+                        <input
+                            type="number"
+                            className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                            value={editingCategory.sort_order}
+                            onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })}
+                        />
+                        <div className="flex gap-2">
+                            <button onClick={saveEditCategory} className="flex-1 py-2 bg-green-600 text-white rounded">保存</button>
+                            <button onClick={cancelEditCategory} className="flex-1 py-2 border rounded dark:text-white">取消</button>
+                        </div>
+                    </div>
+                )}
+                
                 {/* 添加链接表单 */}
                 {addingLinkTo === category.id && (
                   <LinkForm
@@ -366,31 +534,30 @@ const AdminPanel = ({ navData = [], setNavData, onClose }) => {
                 )}
 
                 {/* 链接列表 */}
-                <div className="space-y-2">
+                <div className="space-y-2 mt-4">
                   {(category.links || []).map(link => (
                     <div key={link.id}>
                       {editingLink && editingLink.id === link.id ? (
-                        <LinkForm
-                          initialData={editingLink}
-                          onSave={saveEditLink}
-                          onCancel={cancelEditLink}
-                          mode="edit"
-                        />
+                        <div className="mt-2">
+                            <LinkForm
+                            initialData={editingLink}
+                            onSave={saveEditLink}
+                            onCancel={cancelEditLink}
+                            mode="edit"
+                            />
+                        </div>
                       ) : (
                         <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded flex justify-between items-center">
-                          <div className="flex items-center gap-3 flex-1">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
                             <LinkIcon link={link} />
-                            <div>
-                              <div className="font-medium">{link.name}</div>
-                              <div className="text-sm text-gray-500 truncate max-w-md">{link.url}</div>
-                              {link.description && (
-                                <div className="text-sm text-gray-400">{link.description}</div>
-                              )}
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium truncate">{link.name}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{link.url}</div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => startEditLink(category.id, link)} className="px-2 py-1 bg-yellow-500 text-white rounded text-sm">编辑</button>
-                            <button onClick={() => handleDeleteLink(category.id, link.id)} className="px-2 py-1 bg-red-500 text-white rounded text-sm">删除</button>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button onClick={() => startEditLink(category.id, link)} className="px-2 py-1 bg-yellow-500 text-white rounded text-xs">编辑</button>
+                            <button onClick={() => handleDeleteLink(category.id, link.id)} className="px-2 py-1 bg-red-500 text-white rounded text-xs">删除</button>
                           </div>
                         </div>
                       )}
@@ -402,205 +569,208 @@ const AdminPanel = ({ navData = [], setNavData, onClose }) => {
           </div>
         </div>
       </div>
-
-      {/* 编辑分类模态框 */}
-      {editingCategory && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h4 className="text-xl font-bold mb-4">编辑分类</h4>
-            <div className="space-y-3">
-              <input
-                className="w-full p-2 border rounded dark:bg-gray-600"
-                value={editingCategory.category}
-                onChange={(e) => setEditingCategory({ ...editingCategory, category: e.target.value })}
-              />
-              <input
-                type="number"
-                className="w-full p-2 border rounded dark:bg-gray-600"
-                value={editingCategory.sort_order}
-                onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })}
-              />
-              <div className="flex gap-2">
-                <button onClick={saveEditCategory} className="flex-1 py-2 bg-green-600 text-white rounded">保存</button>
-                <button onClick={cancelEditCategory} className="flex-1 py-2 border rounded">取消</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-// 用户面板
-const UserPanel = ({ user, userNav, setUserNav, onClose }) => {
+// ====================================================================
+// UserPanel (已集成 onSave 逻辑)
+// ====================================================================
+const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
   const [newCategory, setNewCategory] = useState({ category: '', sort_order: 0 });
   const [editingCategory, setEditingCategory] = useState(null);
   const [addingLinkTo, setAddingLinkTo] = useState(null);
   const [editingLink, setEditingLink] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleAddCategory = async () => {
+  const sortedUserNav = useMemo(() => {
+    return [...userNav].sort((a, b) => a.sort_order - b.sort_order);
+  }, [userNav]);
+
+  const handleAddCategory = () => {
     if (!newCategory.category.trim()) {
       alert('请输入分类名');
       return;
     }
-    setLoading(true);
-    try {
-      const newId = Math.max(0, ...userNav.map(c => c.id)) + 1;
-      const newCategoryData = {
-        id: newId,
-        user_id: user.id,
-        category: newCategory.category,
-        sort_order: newCategory.sort_order || 0,
-        links: []
-      };
-      setUserNav(prev => [...prev, newCategoryData]);
-      setNewCategory({ category: '', sort_order: 0 });
-    } catch (e) {
-      alert('新增失败: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
+    const newId = Date.now();
+    const newCategoryData = {
+      id: newId,
+      user_id: user.id,
+      category: newCategory.category,
+      sort_order: newCategory.sort_order || 0,
+      links: []
+    };
+    setUserNav(prev => [...prev, newCategoryData]);
+    setNewCategory({ category: '', sort_order: 0 });
   };
 
   const startEditCategory = (cat) => setEditingCategory({ ...cat });
   const cancelEditCategory = () => setEditingCategory(null);
-  const saveEditCategory = async () => {
+  const saveEditCategory = () => {
     if (!editingCategory) return;
-    try {
-      setUserNav(prev => prev.map(p => p.id === editingCategory.id ? editingCategory : p));
-      setEditingCategory(null);
-    } catch (e) {
-      alert('保存失败: ' + e.message);
-    }
+    setUserNav(prev => prev.map(p => p.id === editingCategory.id ? editingCategory : p));
+    setEditingCategory(null);
   };
 
-  const handleDeleteCategory = async (id) => {
+  const handleDeleteCategory = (id) => {
     if (!confirm('确定删除此分类？分类下的所有链接也将被删除')) return;
-    try {
-      setUserNav(prev => prev.filter(c => c.id !== id));
-    } catch (e) {
-      alert('删除失败: ' + e.message);
-    }
+    setUserNav(prev => prev.filter(c => c.id !== id));
   };
 
-  const handleAddLink = async (categoryId, linkData) => {
-    try {
-      const category = userNav.find(c => c.id === categoryId);
-      if (!category) return;
-      
-      const newLink = {
-        id: `link-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: linkData.name,
-        url: linkData.url,
-        description: linkData.description || '',
-        icon: null
-      };
-      
-      const updatedLinks = [...(category.links || []), newLink];
-      setUserNav(prev => prev.map(c => c.id === categoryId ? { ...c, links: updatedLinks } : c));
-      setAddingLinkTo(null);
-    } catch (e) {
-      alert('添加链接失败: ' + e.message);
-    }
+  const handleAddLink = (categoryId, linkData) => {
+    const newLink = {
+      id: `link-temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: linkData.name,
+      url: linkData.url,
+      description: linkData.description || '',
+      icon: null,
+      sort_order: 999,
+    };
+    
+    setUserNav(prev => 
+      prev.map(c => 
+        c.id === categoryId
+          ? { ...c, links: [...(c.links || []), newLink] }
+          : c
+      )
+    );
+    setAddingLinkTo(null);
   };
 
   const startEditLink = (categoryId, link) => setEditingLink({ categoryId, ...link });
   const cancelEditLink = () => setEditingLink(null);
-  const saveEditLink = async (linkData) => {
+  const saveEditLink = (linkData) => {
     if (!editingLink) return;
-    try {
-      setUserNav(prev => 
-        prev.map(c => 
-          c.id === editingLink.categoryId
-            ? { ...c, links: (c.links || []).map(l => l.id === editingLink.id ? { ...linkData, id: editingLink.id } : l) }
-            : c
-        )
-      );
-      setEditingLink(null);
-    } catch (e) {
-      alert('保存链接失败: ' + e.message);
-    }
+    const updatedLink = { ...linkData, id: editingLink.id }; 
+
+    setUserNav(prev => 
+      prev.map(c => 
+        c.id === editingLink.categoryId
+          ? { ...c, links: (c.links || []).map(l => l.id === editingLink.id ? updatedLink : l) }
+          : c
+      )
+    );
+    setEditingLink(null);
   };
 
-  const handleDeleteLink = async (categoryId, linkId) => {
+  const handleDeleteLink = (categoryId, linkId) => {
     if (!confirm('确定删除此链接？')) return;
-    try {
-      setUserNav(prev => 
-        prev.map(c => 
-          c.id === categoryId
-            ? { ...c, links: (c.links || []).filter(l => l.id !== linkId) }
-            : c
-        )
-      );
-    } catch (e) {
-      alert('删除链接失败: ' + e.message);
-    }
+    setUserNav(prev => 
+      prev.map(c => 
+        c.id === categoryId
+          ? { ...c, links: (c.links || []).filter(l => l.id !== linkId) }
+          : c
+      )
+    );
   };
+  
+  const handleSave = async () => {
+      setLoading(true);
+      try {
+          await onSave(); 
+      } catch (e) {
+          console.error("保存失败:", e);
+      } finally {
+          setLoading(false);
+      }
+  };
+
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl my-8">
-        {/* 标题 */}
+        {/* 标题 - 添加了保存按钮 */}
         <div className="p-6 border-b flex justify-between items-center">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
             <User className="inline mr-2" /> 管理我的导航
           </h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex gap-3 items-center">
+            <button 
+                onClick={handleSave} 
+                className={`px-4 py-2 text-white rounded font-semibold ${loading ? 'bg-gray-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+                disabled={loading}
+            >
+                {loading ? '保存中...' : '保存我的导航'}
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {/* 新增分类 */}
-          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6">
+          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-6">
             <h4 className="font-semibold mb-3">新增分类</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <input
-                className="p-2 border rounded dark:bg-gray-600"
+                className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
                 placeholder="分类名称"
                 value={newCategory.category}
                 onChange={(e) => setNewCategory({ ...newCategory, category: e.target.value })}
               />
               <input
                 type="number"
-                className="p-2 border rounded dark:bg-gray-600"
+                className="p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
                 placeholder="排序"
                 value={newCategory.sort_order}
                 onChange={(e) => setNewCategory({ ...newCategory, sort_order: parseInt(e.target.value) || 0 })}
               />
               <button
                 onClick={handleAddCategory}
-                className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                disabled={loading}
+                className="p-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
-                {loading ? '添加中...' : '添加分类'}
+                添加分类
               </button>
             </div>
           </div>
 
           {/* 分类列表 */}
           <div className="space-y-4">
-            {userNav.map(category => (
-              <div key={category.id} className="border rounded-lg p-4">
+            {sortedUserNav.map(category => (
+              <div key={category.id} className="border rounded-lg p-4 bg-white dark:bg-gray-800">
                 {/* 分类头部 */}
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <h4 className="font-semibold text-lg">{category.category}</h4>
-                    <p className="text-sm text-gray-500">排序: {category.sort_order} | 链接数: {(category.links || []).length}</p>
+                    <p className="text-sm text-gray-500">
+                        排序: {category.sort_order} | 链接数: {(category.links || []).length}
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setAddingLinkTo(addingLinkTo === category.id ? null : category.id)}
-                      className="px-3 py-1 bg-green-600 text-white rounded flex items-center gap-1"
+                      className="px-3 py-1 bg-green-600 text-white rounded flex items-center gap-1 text-sm"
                     >
                       <Plus className="w-4 h-4" /> 添加链接
                     </button>
-                    <button onClick={() => startEditCategory(category)} className="px-3 py-1 bg-yellow-500 text-white rounded">编辑</button>
-                    <button onClick={() => handleDeleteCategory(category.id)} className="px-3 py-1 bg-red-600 text-white rounded">删除</button>
+                    <button onClick={() => startEditCategory(category)} className="px-3 py-1 bg-yellow-500 text-white rounded text-sm">编辑</button>
+                    <button onClick={() => handleDeleteCategory(category.id)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">删除</button>
                   </div>
                 </div>
+                
+                {/* 编辑分类模态框 */}
+                {editingCategory && editingCategory.id === category.id && (
+                    <div className="my-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded space-y-3">
+                        <h4 className="font-bold">编辑分类：{editingCategory.category}</h4>
+                        <input
+                            className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                            value={editingCategory.category}
+                            onChange={(e) => setEditingCategory({ ...editingCategory, category: e.target.value })}
+                        />
+                        <input
+                            type="number"
+                            className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                            value={editingCategory.sort_order}
+                            onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })}
+                        />
+                        <div className="flex gap-2">
+                            <button onClick={saveEditCategory} className="flex-1 py-2 bg-green-600 text-white rounded">保存</button>
+                            <button onClick={cancelEditCategory} className="flex-1 py-2 border rounded dark:text-white">取消</button>
+                        </div>
+                    </div>
+                )}
+
 
                 {/* 添加链接表单 */}
                 {addingLinkTo === category.id && (
@@ -612,23 +782,33 @@ const UserPanel = ({ user, userNav, setUserNav, onClose }) => {
                 )}
 
                 {/* 链接列表 */}
-                <div className="space-y-2">
+                <div className="space-y-2 mt-4">
                   {(category.links || []).map(link => (
-                    <div key={link.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <LinkIcon link={link} />
-                        <div>
-                          <div className="font-medium">{link.name}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-md">{link.url}</div>
-                          {link.description && (
-                            <div className="text-sm text-gray-400">{link.description}</div>
-                          )}
+                    <div key={link.id}>
+                      {editingLink && editingLink.id === link.id ? (
+                        <div className="mt-2">
+                            <LinkForm
+                            initialData={editingLink}
+                            onSave={saveEditLink}
+                            onCancel={cancelEditLink}
+                            mode="edit"
+                            />
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => startEditLink(category.id, link)} className="px-2 py-1 bg-yellow-500 text-white rounded text-sm">编辑</button>
-                        <button onClick={() => handleDeleteLink(category.id, link.id)} className="px-2 py-1 bg-red-500 text-white rounded text-sm">删除</button>
-                      </div>
+                      ) : (
+                        <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded flex justify-between items-center">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <LinkIcon link={link} />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium truncate">{link.name}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{link.url}</div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button onClick={() => startEditLink(category.id, link)} className="px-2 py-1 bg-yellow-500 text-white rounded text-xs">编辑</button>
+                            <button onClick={() => handleDeleteLink(category.id, link.id)} className="px-2 py-1 bg-red-500 text-white rounded text-xs">删除</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -637,47 +817,6 @@ const UserPanel = ({ user, userNav, setUserNav, onClose }) => {
           </div>
         </div>
       </div>
-
-      {/* 编辑分类模态框 */}
-      {editingCategory && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h4 className="text-xl font-bold mb-4">编辑分类</h4>
-            <div className="space-y-3">
-              <input
-                className="w-full p-2 border rounded dark:bg-gray-600"
-                value={editingCategory.category}
-                onChange={(e) => setEditingCategory({ ...editingCategory, category: e.target.value })}
-              />
-              <input
-                type="number"
-                className="w-full p-2 border rounded dark:bg-gray-600"
-                value={editingCategory.sort_order}
-                onChange={(e) => setEditingCategory({ ...editingCategory, sort_order: parseInt(e.target.value) || 0 })}
-              />
-              <div className="flex gap-2">
-                <button onClick={saveEditCategory} className="flex-1 py-2 bg-green-600 text-white rounded">保存</button>
-                <button onClick={cancelEditCategory} className="flex-1 py-2 border rounded">取消</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 编辑链接模态框 */}
-      {editingLink && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h4 className="text-xl font-bold mb-4">编辑链接</h4>
-            <LinkForm
-              initialData={editingLink}
-              onSave={saveEditLink}
-              onCancel={cancelEditLink}
-              mode="edit"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -862,106 +1001,185 @@ const WelcomeModal = ({ onClose }) => {
   );
 };
 
+// ====================================================================
 // 主应用组件
+// ====================================================================
+
 export default function App() {
-  const [publicNav, setPublicNav] = useState(DEFAULT_PUBLIC_NAV);
-  const [userNav, setUserNav] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 180);
-  const [showAuth, setShowAuth] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showAuth, setShowAuth] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showUserPanel, setShowUserPanel] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState('public'); 
+  const [publicNav, setPublicNav] = useState([]);
+  const [userNav, setUserNav] = useState([]);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [viewMode, setViewMode] = useState('public'); // 'public' 或 'user'
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
 
-  // 初始化认证状态
+  const debouncedSearch = useDebounce(searchTerm, 300);
+  const isAdmin = user && user.email === ADMIN_EMAIL;
+
+  // 0. 初始化和认证检查
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data?.session?.user) {
-        setUser(data.session.user);
-        const isNew = localStorage.getItem(`first_time_${data.session.user.id}`) === null;
-        if (isNew) {
-          setIsNewUser(true);
-          setShowWelcome(true);
-          localStorage.setItem(`first_time_${data.session.user.id}`, 'true');
-        }
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
+        // 检查新用户
         const isNew = localStorage.getItem(`first_time_${session.user.id}`) === null;
         if (isNew) {
-          setIsNewUser(true);
-          setShowWelcome(true);
-          localStorage.setItem(`first_time_${session.user.id}`, 'true');
+            setShowWelcome(true);
+            localStorage.setItem(`first_time_${session.user.id}`, 'true');
         }
       } else {
         setUser(null);
-        setIsNewUser(false);
+        setViewMode('public');
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // 加载用户导航
+  // 1. 公共导航加载 (仅在组件挂载时执行一次)
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchPublicNav();
+        setPublicNav(data);
+      } catch (e) {
+        console.error('加载公共导航失败，使用默认数据:', e);
+        setPublicNav(DEFAULT_PUBLIC_NAV);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (loading) {
+      loadData();
+    }
+  }, []);
+
+  // 2. 用户导航加载 (用户状态变化时执行)
   useEffect(() => {
     if (!user) {
       setUserNav([]);
       return;
     }
 
-    const loadUserNav = async () => {
-      // 默认用户数据
-      setUserNav([
-        {
-          id: 1,
-          user_id: user.id,
-          category: '我的收藏',
-          sort_order: 1,
-          links: [
-            { 
-              id: 'user-link-1', 
-              name: '个人仪表板', 
-              url: 'https://example.com', 
-              description: '示例链接'
-            }
-          ]
+    const loadData = async () => {
+      try {
+        const data = await fetchUserNav(user.id);
+        if (data.length === 0) {
+            // 如果用户导航为空，提供默认的“我的收藏”分类
+            setUserNav([{
+                id: Date.now(), // 临时 ID
+                user_id: user.id,
+                category: '我的收藏',
+                sort_order: 1,
+                links: []
+            }]);
+        } else {
+            setUserNav(data);
         }
-      ]);
+        
+      } catch (e) {
+        console.error('加载用户导航失败:', e);
+        setUserNav([]); 
+      }
     };
 
-    loadUserNav();
+    loadData();
   }, [user]);
+  
+  // 3. 核心保存函数 - 公共导航
+  const handleSavePublicNav = async () => {
+    if (!isAdmin) return;
+    setLoading(true);
+    try {
+      await savePublicNavToDB(publicNav);
+      alert('✅ 公共导航保存成功！正在刷新数据...');
+      
+      // 重新加载数据以获取新的数据库ID
+      const updatedNav = await fetchPublicNav();
+      setPublicNav(updatedNav);
+      setShowAdminPanel(false);
+    } catch (e) {
+      alert('❌ 保存公共导航失败。请检查 Supabase RPC 函数和管理员权限。');
+      console.error('保存公共导航失败:', e);
+      throw e; // 抛出错误，以便在 AdminPanel 中捕获
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 4. 核心保存函数 - 用户导航
+  const handleSaveUserNav = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      await saveUserNavToDB(user.id, userNav);
+      alert('✅ 我的导航保存成功！正在刷新数据...');
+      
+      // 重新加载数据以获取新的数据库ID
+      const updatedNav = await fetchUserNav(user.id);
+      setUserNav(updatedNav);
+      setShowUserPanel(false);
+    } catch (e) {
+      alert('❌ 保存我的导航失败。请检查 Supabase RPC 函数和用户权限。');
+      console.error('保存我的导航失败:', e);
+      throw e; // 抛出错误，以便在 UserPanel 中捕获
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setShowAdminPanel(false);
-    setShowUserPanel(false);
     setViewMode('public');
   };
 
-  // 键盘快捷键
+  // 键盘快捷键 (保留原有逻辑)
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowAuth(false);
+        setShowAdminPanel(false);
+        setShowUserPanel(false);
+      }
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === 'k') {
+          e.preventDefault();
+          const searchInput = document.getElementById('search-input');
+          if (searchInput) searchInput.focus();
+        } else if (e.key === 'a' && isAdmin) {
+          e.preventDefault();
+          setShowAdminPanel(true);
+        } else if (e.key === 'u' && user) {
+          e.preventDefault();
+          setShowUserPanel(true);
+        }
+      }
+      // 聚焦搜索框的快捷键
       if (e.key === '/' && !e.target.matches('input, textarea')) {
         e.preventDefault();
         document.getElementById('searchInput')?.focus();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
+  }, [isAdmin, user]);
+  
+  // 渲染逻辑修正：无论是否登录，先尝试加载公共导航
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020]">
+    <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020] text-gray-900 dark:text-white">
       {/* 顶部导航栏 */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -991,39 +1209,36 @@ export default function App() {
                     onClick={() => setShowAuth(true)}
                     className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
-                    登录
-                  </button>
-                  <button 
-                    onClick={() => setShowAuth(true)}
-                    className="px-4 py-2 border border-blue-600 text-blue-600 dark:text-blue-300 rounded hover:bg-blue-50 dark:hover:bg-gray-700"
-                  >
-                    注册
+                    登录/注册
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                  <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:inline">
                     {user.email}
                   </span>
                   {isAdmin && (
                     <button
                       onClick={() => { setShowAdminPanel(true); setShowUserPanel(false); }}
-                      className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      className="p-2 bg-purple-600 text-white rounded-full hover:bg-purple-700"
+                      title="管理公共导航 (Ctrl+A)"
                     >
-                      管理公共导航
+                      <Settings className="w-5 h-5" />
                     </button>
                   )}
                   <button
                     onClick={() => { setShowUserPanel(true); setShowAdminPanel(false); }}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700"
+                    title="管理我的导航 (Ctrl+U)"
                   >
-                    管理我的导航
+                    <User className="w-5 h-5" />
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1"
+                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
+                    title="退出登录"
                   >
-                    <LogOut className="w-4 h-4" /> 退出
+                    <LogOut className="w-5 h-5" />
                   </button>
                 </div>
               )}
@@ -1049,13 +1264,13 @@ export default function App() {
           <div className="flex gap-2">
             <button
               onClick={() => setViewMode('public')}
-              className={`px-4 py-2 rounded-lg ${viewMode === 'public' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${viewMode === 'public' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}
             >
               <Settings className="w-4 h-4 inline mr-2" /> 公共导航
             </button>
             <button
               onClick={() => setViewMode('user')}
-              className={`px-4 py-2 rounded-lg ${viewMode === 'user' ? 'bg-green-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${viewMode === 'user' ? 'bg-green-600 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}
             >
               <User className="w-4 h-4 inline mr-2" /> 我的导航
             </button>
@@ -1065,23 +1280,14 @@ export default function App() {
 
       {/* 主内容区 */}
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {!user && viewMode === 'user' ? (
-          <div className="text-center py-12">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-8">
-              <User className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">请先登录</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">登录后可以管理个人导航</p>
-              <button
-                onClick={() => setShowAuth(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                立即登录
-              </button>
-            </div>
+        {loading ? (
+          // 数据加载动画
+          <div className="text-center py-20 text-gray-500 dark:text-gray-400">
+            <Search className="w-8 h-8 mx-auto animate-spin mb-2" /> 正在加载导航数据...
           </div>
         ) : (
           <PublicNav 
-            navData={viewMode === 'user' ? userNav : publicNav} 
+            navData={user && viewMode === 'user' ? userNav : publicNav} 
             searchTerm={debouncedSearch} 
           />
         )}
@@ -1094,7 +1300,7 @@ export default function App() {
           onLogin={(u) => {
             setUser(u);
             setShowAuth(false);
-            setViewMode('user');
+            // 登录后，用户导航会自动加载，用户可以通过切换按钮选择视图
           }}
         />
       )}
@@ -1103,6 +1309,7 @@ export default function App() {
         <AdminPanel 
           navData={publicNav}
           setNavData={setPublicNav}
+          onSave={handleSavePublicNav} // <-- 传递保存函数
           onClose={() => setShowAdminPanel(false)}
         />
       )}
@@ -1112,11 +1319,12 @@ export default function App() {
           user={user}
           userNav={userNav}
           setUserNav={setUserNav}
+          onSave={handleSaveUserNav} // <-- 传递保存函数
           onClose={() => setShowUserPanel(false)}
         />
       )}
       
-      {showWelcome && isNewUser && (
+      {showWelcome && (
         <WelcomeModal onClose={() => setShowWelcome(false)} />
       )}
     </div>
