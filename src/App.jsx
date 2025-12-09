@@ -863,11 +863,6 @@ const WelcomeModal = ({ onClose }) => {
 };
 
 // 主应用组件
-
-
-// Footer added
-const Footer=()=> (<footer className='text-center py-6 text-gray-500'>关于本站 | 免责声明 | 运行天数占位</footer>);
-
 export default function App() {
   const [publicNav, setPublicNav] = useState(DEFAULT_PUBLIC_NAV);
   const [userNav, setUserNav] = useState([]);
@@ -972,7 +967,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl text-center mx-auto font-bold text-gray-800 dark:text-white">极速导航</h1>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">极速导航</h1>
               <span className="text-sm text-gray-500 dark:text-gray-300 hidden sm:inline">快速入口</span>
             </div>
 
