@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key } from 'lucide-react';
 import './index.css';
@@ -132,37 +132,41 @@ async function savePublicNavToDB(navData) {
   if (error) throw error;
 }
 
-// **数据保存：用户导航 (调用 RPC) - 已修复为 sync_my_nav**
+// 🚀🚀🚀🚀🚀 最终修复函数 🚀🚀🚀🚀🚀
+// **数据保存：用户导航 (调用 RPC) - 个人导航保存修复**
 async function saveUserNavToDB(userId, navData) {
-  const categoriesToSave = navData.map(c => ({ 
-    id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
-    category: c.category, 
-    sort_order: c.sort_order,
-    user_id: userId
-  }));
+    
+    // ✅ 修复 1：强制使用数组索引 (index) 作为 sort_order，避免前端产生的大数导致 'value out of range' 错误。
+    const categoriesToSave = navData.map((c, index) => ({ 
+        id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
+        category: c.category, 
+        sort_order: index, // <--- 修正为数组索引
+        user_id: userId
+    }));
 
-  const linksToSave = navData.flatMap(c => 
-    c.links.map(l => ({ 
-      category_id: c.id, 
-      user_id: userId,
-      name: l.name, 
-      url: l.url, 
-      description: l.description, 
-      icon: l.icon, 
-      sort_order: l.sort_order || 0,
-      id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
-    }))
-  );
-  
-  // 关键修复：从 'sync_user_nav' 更改为 'sync_my_nav'
-  const { error } = await supabase.rpc('sync_my_nav', {
-    user_id: userId,
-    categories_data: categoriesToSave,
-    links_data: linksToSave
-  });
+    const linksToSave = navData.flatMap(c => 
+        c.links.map((l, index) => ({ 
+            category_id: c.id, 
+            user_id: userId,
+            name: l.name, 
+            url: l.url, 
+            description: l.description, 
+            icon: l.icon, 
+            sort_order: index, // <--- 修正为数组索引
+            id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
+        }))
+    );
+    
+    // ✅ 修复 2：将 RPC 参数名 'user_id' 替换为 'p_user_id'，以匹配 PostgreSQL 函数签名，解决 400 Bad Request 错误。
+    const { error } = await supabase.rpc('sync_my_nav', {
+        p_user_id: userId, // <-- 关键修复：参数名称必须是 p_user_id
+        categories_data: categoriesToSave,
+        links_data: linksToSave
+    });
 
-  if (error) throw error;
+    if (error) throw error;
 }
+// 🚀🚀🚀🚀🚀 修复结束 🚀🚀🚀🚀🚀
 
 // ====================================================================
 // 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
@@ -814,7 +818,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
 };
 
 // ====================================================================
-// AuthModal, WelcomeModal (认证和欢迎组件 - 保持不变)
+// AuthModal, WelcomeModal (认证和欢迎组件)
 // ====================================================================
 const AuthModal = ({ onClose, onLogin }) => {
   const [email, setEmail] = useState('');
@@ -840,7 +844,7 @@ const AuthModal = ({ onClose, onLogin }) => {
     
     try {
       if (isRegister) {
-        const { data, error } = await supabase.auth.signUp({ 
+        const { error } = await supabase.auth.signUp({ 
           email, 
           password,
           options: {
@@ -1147,7 +1151,7 @@ export default function App() {
       // 站内搜索由 debouncedSearch 状态自动触发 PublicNav 过滤
   };
 
-  // 键盘快捷键 (保持不变)
+  // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -1186,17 +1190,18 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           
           {/* 顶行：居中标题和用户操作 */}
-          <div className="flex items-center justify-center md:justify-between">
+          <div className="flex items-center justify-between">
+            <div className="w-1/3"></div> 
             
-            {/* 标题 - 移动端居中，桌面端左对齐 */}
-            <div className="text-center flex-1 min-w-0 md:text-left">
+            {/* 居中标题 */}
+            <div className="text-center flex-1 min-w-0">
               <h1 className="text-3xl font-extrabold text-gray-800 dark:text-white whitespace-nowrap">
                 极速导航网
               </h1>
             </div>
             
-            {/* 右侧：用户操作 - 仅在 MD (桌面) 屏幕及以上显示 */}
-            <div className="hidden md:flex items-center gap-3 justify-end">
+            {/* 右侧：用户操作 */}
+            <div className="flex items-center gap-3 w-1/3 justify-end">
               
               {!user ? (
                 <button 
@@ -1241,7 +1246,7 @@ export default function App() {
           {/* 第二行：全宽搜索框和选择器 */}
           <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-2 w-full">
               
-              {/* 模式选择器 - 移动端使用圆角，桌面端使用半圆角 */}
+              {/* 模式选择器 */}
               <select
                   value={searchMode}
                   onChange={(e) => {
@@ -1250,7 +1255,7 @@ export default function App() {
                           setSearchTerm(''); // 切换到站外搜索时，清空站内搜索的过滤结果
                       }
                   }}
-                  className="p-2 border rounded md:rounded-l-full dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                  className="p-2 border rounded-l-full dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
               >
                   {searchEngines.map(engine => (
                       <option key={engine.id} value={engine.id}>
@@ -1259,14 +1264,14 @@ export default function App() {
                   ))}
               </select>
 
-              {/* 搜索输入框 - 移动端使用圆角，桌面端使用半圆角 */}
+              {/* 搜索输入框 */}
               <input
                   id="searchInput"
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={searchMode === 'internal' ? '搜索站内链接... (按 / 聚焦)' : `使用 ${searchEngines.find(e => e.id === searchMode).name} 搜索...`}
-                  className="flex-1 px-4 py-2 rounded md:rounded-r-full border dark:bg-gray-700 dark:border-gray-600"
+                  className="flex-1 px-4 py-2 rounded-r-full border dark:bg-gray-700 dark:border-gray-600"
               />
               
               {/* 提交按钮（对站外搜索有效） */}
@@ -1320,7 +1325,7 @@ export default function App() {
         <AdminPanel 
           navData={publicNav} 
           setNavData={setPublicNav} 
-          onSave={handleSavePublicNav} // ✅ 修复：传递公共导航保存函数
+          onSave={handleSavePublicNav} // 传递公共导航保存函数
           onClose={() => setShowAdminPanel(false)} 
         />
       )}
@@ -1329,51 +1334,12 @@ export default function App() {
           user={user} 
           userNav={userNav} 
           setUserNav={setUserNav} 
-          onSave={handleSaveUserNav} // ✅ 修复：传递用户导航保存函数
+          onSave={handleSaveUserNav} // 传递用户导航保存函数
           onClose={() => setShowUserPanel(false)} 
         />
       )}
       {showWelcome && (<WelcomeModal onClose={() => setShowWelcome(false)} />)}
       
-      {/* 新增：悬浮操作按钮组 (仅在移动端显示) */}
-      <div className="fixed bottom-6 right-4 z-40 flex flex-col gap-3 md:hidden">
-          {!user ? (
-              <button 
-                  onClick={() => setShowAuth(true)}
-                  className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 shadow-lg"
-                  title="登录/注册"
-              >
-                  <User className="w-5 h-5" />
-              </button>
-          ) : (
-              <>
-                  {isAdmin && (
-                      <button
-                          onClick={() => { setShowAdminPanel(true); setShowUserPanel(false); }}
-                          className="p-3 bg-purple-600 text-white rounded-full hover:bg-purple-700 shadow-lg"
-                          title="管理公共导航 (Ctrl+A)"
-                      >
-                          <Settings className="w-5 h-5" />
-                      </button>
-                  )}
-                  <button
-                      onClick={() => { setShowUserPanel(true); setShowAdminPanel(false); }}
-                      className="p-3 bg-green-600 text-white rounded-full hover:bg-green-700 shadow-lg"
-                      title="管理我的导航 (Ctrl+U)"
-                  >
-                      <User className="w-5 h-5" />
-                  </button>
-                  <button
-                      onClick={handleLogout}
-                      className="p-3 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg"
-                      title="退出登录"
-                  >
-                      <LogOut className="w-5 h-5" />
-                  </button>
-              </>
-          )}
-      </div>
-
       {/* 页尾 */}
       <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
