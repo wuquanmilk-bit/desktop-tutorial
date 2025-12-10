@@ -193,8 +193,12 @@ async function saveUserNavToDB(userId, navData) {
 // 链接图标组件
 const LinkIcon = ({ link }) => {
   const [err, setErr] = useState(false);
-  // 使用 link.icon 或 DuckDuckGo 的 favicon 服务
-  const src = link.icon || (link.url ? `https://icons.duckduckgo.com/ip3/${new URL(link.url).hostname}.ico` : null);
+  
+  // ✅ 优化 1: 将图标获取源从 DuckDuckGo 切换到 Google Favicon Service，在 App 环境中更稳定
+  const src = link.icon || (link.url 
+    ? `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=32` 
+    : null
+  );
   
   return (
     <div className="w-10 h-10 rounded-lg border bg-gray-50 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
@@ -1333,7 +1337,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020] text-gray-900 dark:text-white">
       {/* 顶部导航栏 */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow">
+      <header 
+          className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow"
+          // 适配顶部安全区（状态栏）
+          style={{ paddingTop: 'env(safe-area-inset-top, 1rem)' }} 
+      >
         <div className="max-w-7xl mx-auto px-4 py-4">
           
           {/* 顶行：居中标题和用户操作 */}
@@ -1396,7 +1404,7 @@ export default function App() {
                   ))}
               </select>
 
-              {/* 搜索输入框 - ✅ 搜索框背景色已加深 (bg-gray-200) */}
+              {/* 搜索输入框 - 搜索框背景色已加深 (bg-gray-200) */}
               <input
                   id="searchInput"
                   type="text"
@@ -1454,8 +1462,12 @@ export default function App() {
         )}
       </main>
 
-      {/* ✅ 右下角悬浮管理按钮 (Floating Action Buttons) */}
-      <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3 z-50">
+      {/* 右下角悬浮管理按钮 (Floating Action Buttons) */}
+      <div 
+          className="fixed right-6 flex flex-col items-end space-y-3 z-50"
+          // 适配底部安全区，将悬浮按钮定位到安全区之上
+          style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }} 
+      >
         
         {/* 1. 管理公共导航 (仅管理员可见) */}
         {isAdmin && (
@@ -1517,7 +1529,7 @@ export default function App() {
         />
       )}
 
-      {/* ✅ 链接操作浮动模态框 (实现手机 App 悬浮功能) */}
+      {/* 链接操作浮动模态框 (实现手机 App 悬浮功能) */}
       {selectedLink && (
         <LinkActionModal
           link={selectedLink}
@@ -1529,7 +1541,11 @@ export default function App() {
       )}
 
       {/* 页尾 */}
-      <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
+      <footer 
+          className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6"
+          // 适配底部安全区（避免被 Home Indicator 遮挡）
+          style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+      >
         <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
           
           {/* 顶行：标题和版权 */}
@@ -1540,14 +1556,14 @@ export default function App() {
             &copy; {new Date().getFullYear()} 极速导航网. 保留所有权利.
           </p>
 
-          {/* 中行：运行天数 */}
-          <p className="text-base text-gray-500 dark:text-gray-400 font-medium flex items-center justify-center">
+          {/* 中行：运行天数 - ✅ 优化 2: 统一为 text-sm */}
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             本站已稳定运行 <span className="mx-1 font-bold text-blue-600 dark:text-blue-400">{runningDays}</span> 天
           </p>
 
-          {/* 底行：链接和图标 */}
-          <div className="flex items-center justify-center text-base text-gray-500 dark:text-gray-400 pt-2">
+          {/* 底行：链接和图标 - ✅ 优化 2: 统一为 text-sm */}
+          <div className="flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 pt-2">
             {/* 链接改为按钮并打开模态框 */}
             <button onClick={() => setShowAboutModal(true)} className="hover:text-blue-500 mx-2">关于本站</button>
             <span className="text-gray-300 dark:text-gray-600">|</span>
