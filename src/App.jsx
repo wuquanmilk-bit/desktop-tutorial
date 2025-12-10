@@ -107,7 +107,11 @@ async function fetchUserNav(userId) {
 // **数据保存：公共导航 (调用 RPC)**
 async function savePublicNavToDB(navData) {
   const categoriesToSave = navData.map(c => ({ 
-    id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
+    // 【修复点 2：分类 ID 映射】
+    // 如果是数字ID (现有)，保留。如果是新生成的字符串ID，保留字符串。否则为 null。
+    id: typeof c.id === 'number' && c.id > 0 
+          ? c.id 
+          : (typeof c.id === 'string' ? c.id : null),
     category: c.category, 
     sort_order: c.sort_order 
   }));
@@ -120,10 +124,15 @@ async function savePublicNavToDB(navData) {
       description: l.description, 
       icon: l.icon, 
       sort_order: l.sort_order || 0,
-      id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
+      // 【修复点 3：链接 ID 映射】
+      // 只有现有的（不包含 link-temp-）链接 ID 才会被解析成数字 ID 用于更新，否则为 null 用于插入。
+      id: l.id && typeof l.id === 'string' && l.id.startsWith('link-') && !l.id.includes('link-temp-')
+          ? parseInt(l.id.replace('link-', '')) 
+          : null 
     }))
   );
 
+  // 这里的 RPC 调用是最可能失败的地方，但前端结构是正确的。
   const { error } = await supabase.rpc('sync_public_nav', {
     categories_data: categoriesToSave,
     links_data: linksToSave
@@ -338,7 +347,9 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
       alert('请输入分类名称');
       return;
     }
-    const newId = Date.now(); 
+    // 【修复点 1：分类 ID 生成】
+    // 使用字符串作为临时 ID，避免与数据库数字 ID混淆
+    const newId = `new-cat-${Date.now()}`; 
     
     const newCategoryData = {
       id: newId,
@@ -414,7 +425,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   const handleSave = async () => {
       setLoading(true);
       try {
-          // *** 关键：调用 App 组件传入的 onSave prop ***
+          // *** 关键：调用 App 组件传入的 onSave prop (handleSavePublicNav) ***
           await onSave(); 
       } catch (e) {
           console.error("保存失败:", e);
@@ -662,7 +673,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
   const handleSave = async () => {
       setLoading(true);
       try {
-          // *** 关键：调用 App 组件传入的 onSave prop ***
+          // *** 关键：调用 App 组件传入的 onSave prop (handleSaveUserNav) ***
           await onSave(); 
       } catch (e) {
           console.error("保存失败:", e);
@@ -1074,6 +1085,10 @@ export default function App() {
       try {
         const data = await fetchUserNav(user.id);
         if (data.length === 0) {
+            // 注意：这里用户的原始代码中使用了 Date.now() 作为 newId，在 UserPanel 的 handleAddCategory 中也是。
+            // 考虑到用户导航只进行 INSERT/UPDATE，这里可以暂时保留数字ID，但为了安全性和一致性，最好也改成字符串。
+            // 但因为用户没有反馈用户导航有bug，且用户导航的 saveUserNavToDB 逻辑中，新ID最终也是被 null 了，
+            // 所以这里为了不引入其他未知风险，暂时保留原始代码逻辑，只修复公共导航的问题。
             setUserNav([{
                 id: Date.now(), 
                 user_id: user.id,
@@ -1200,7 +1215,7 @@ export default function App() {
               </h1>
             </div>
             
-            {/* 右侧：用户操作 */}
+            {/* 右侧：用户操作 - 仅保留登录/注册和已登录用户的邮箱显示 */}
             <div className="flex items-center gap-3 w-1/3 justify-end">
               
               {!user ? (
@@ -1215,29 +1230,7 @@ export default function App() {
                   <span className="text-sm text-gray-600 dark:text-gray-300 hidden lg:inline truncate max-w-[100px]">
                     {user.email}
                   </span>
-                  {isAdmin && (
-                    <button
-                      onClick={() => { setShowAdminPanel(true); setShowUserPanel(false); }}
-                      className="p-2 bg-purple-600 text-white rounded-full hover:bg-purple-700"
-                      title="管理公共导航 (Ctrl+A)"
-                    >
-                      <Settings className="w-5 h-5" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => { setShowUserPanel(true); setShowAdminPanel(false); }}
-                    className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700"
-                    title="管理我的导航 (Ctrl+U)"
-                  >
-                    <User className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
-                    title="退出登录"
-                  >
-                    <LogOut className="w-5 h-5" />
-                  </button>
+                  {/* 【UI 修复】: 管理/退出按钮已移至右下角的浮动操作栏 */}
                 </div>
               )}
             </div>
@@ -1318,6 +1311,38 @@ export default function App() {
           />
         )}
       </main>
+      
+      {/* 🚀 【UI 修复】：浮动操作栏 (Floating Utility Bar) */}
+      {user && (
+        <div className="fixed bottom-6 right-6 z-30 flex flex-col items-end space-y-3">
+            {/* 管理公共导航 - 仅管理员可见 */}
+            {isAdmin && (
+                <button
+                    onClick={() => { setShowAdminPanel(true); setShowUserPanel(false); }}
+                    className="p-4 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition"
+                    title="管理公共导航 (Ctrl+A)"
+                >
+                    <Settings className="w-6 h-6" />
+                </button>
+            )}
+            {/* 管理我的导航 - 所有用户可见 */}
+            <button
+                onClick={() => { setShowUserPanel(true); setShowAdminPanel(false); }}
+                className="p-4 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition"
+                title="管理我的导航 (Ctrl+U)"
+            >
+                <User className="w-6 h-6" />
+            </button>
+            {/* 退出登录 */}
+            <button
+                onClick={handleLogout}
+                className="p-4 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition"
+                title="退出登录"
+            >
+                <LogOut className="w-6 h-6" />
+            </button>
+        </div>
+      )}
 
       {/* 模态框 - 已修复 onSave 属性 */}
       {showAuth && (<AuthModal onClose={() => setShowAuth(false)} onLogin={(u) => { setUser(u); setShowAuth(false); }}/>)}
