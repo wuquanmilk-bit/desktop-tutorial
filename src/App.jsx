@@ -1348,9 +1348,13 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div className="w-1/3"></div> 
             
-            {/* 居中标题 */}
+            {/* 居中标题 - ✅ 样式修改：标题颜色 */}
             <div className="text-center flex-1 min-w-0">
-              <h1 className="text-3xl font-extrabold whitespace-nowrap" style={{ color: '#6A5ACD' }}>
+              <h1 
+                  className="text-3xl font-extrabold whitespace-nowrap" 
+                  // 标题颜色为 #3629efff
+                  style={{ color: '#3629efff' }} 
+              >
                 极速导航网
               </h1>
             </div>
@@ -1383,10 +1387,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* 第二行：全宽搜索框和选择器 */}
-          <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-2 w-full">
+          {/* 第二行：全宽搜索框和选择器 - ✅ 样式修改：搜索框整体样式 */}
+          <form 
+              onSubmit={handleSearchSubmit} 
+              className="mt-4 flex gap-0 w-full rounded-lg shadow-md overflow-hidden border dark:border-gray-700"
+          >
               
-              {/* 模式选择器 */}
+              {/* 模式选择器 - 移除圆角，背景改为 bg-gray-50，使用 outline-none 隐藏焦点线 */}
               <select
                   value={searchMode}
                   onChange={(e) => {
@@ -1395,7 +1402,7 @@ export default function App() {
                           setSearchTerm(''); 
                       }
                   }}
-                  className="p-2 border rounded-l-full dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                  className="p-3 border-r dark:border-gray-700 bg-gray-50 dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500 appearance-none outline-none"
               >
                   {searchEngines.map(engine => (
                       <option key={engine.id} value={engine.id}>
@@ -1404,19 +1411,22 @@ export default function App() {
                   ))}
               </select>
 
-              {/* 搜索输入框 - 搜索框背景色已加深 (bg-gray-200) */}
+              {/* 搜索输入框 - 移除圆角，背景改为 bg-gray-50，移除边框 */}
               <input
                   id="searchInput"
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={searchMode === 'internal' ? '搜索站内链接... (按 / 聚焦)' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
-                  className="flex-1 px-4 py-2 rounded-r-full border bg-gray-200 dark:bg-gray-700 dark:border-gray-600"
+                  className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-800 outline-none"
               />
               
-              {/* 提交按钮（对站外搜索有效） */}
+              {/* 提交按钮 - 移除圆角，保持蓝色 */}
               {searchMode !== 'internal' && (
-                  <button type="submit" className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 flex items-center justify-center">
+                  <button 
+                      type="submit" 
+                      className="px-4 bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center flex-shrink-0"
+                  >
                       <Search className="w-5 h-5" />
                   </button>
               )}
@@ -1449,7 +1459,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {loading ? (
           <div className="text-center py-20 text-gray-500 dark:text-gray-400">
-            <Search className="w-8 h-8 mx-auto animate-spin mb-2" /> 正在加载导航数据...
+            <Search className="w-8 h-8 mx-auto animate-spin mb-2" /> 欢迎使用极速导航...
           </div>
         ) : (
           <PublicNav 
@@ -1549,20 +1559,20 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
           
           {/* 顶行：标题和版权 */}
-          <h4 className="text-3xl font-extrabold" style={{ color: '#6A5ACD' }}>
+          <h4 className="text-3xl font-extrabold" style={{ color: '#3629efff' }}>
             第一象限
           </h4>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             &copy; {new Date().getFullYear()} 极速导航网. 保留所有权利.
           </p>
 
-          {/* 中行：运行天数 - ✅ 优化 2: 统一为 text-sm */}
+          {/* 中行：运行天数 - 统一为 text-sm */}
           <p className="text-sm text-gray-500 dark:text-gray-400 font-medium flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             本站已稳定运行 <span className="mx-1 font-bold text-blue-600 dark:text-blue-400">{runningDays}</span> 天
           </p>
 
-          {/* 底行：链接和图标 - ✅ 优化 2: 统一为 text-sm */}
+          {/* 底行：链接和图标 - 统一为 text-sm */}
           <div className="flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 pt-2">
             {/* 链接改为按钮并打开模态框 */}
             <button onClick={() => setShowAboutModal(true)} className="hover:text-blue-500 mx-2">关于本站</button>
