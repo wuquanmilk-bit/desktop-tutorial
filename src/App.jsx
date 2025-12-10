@@ -19,6 +19,26 @@ function useDebounce(value, delay = 200) {
   return v;
 }
 
+// 辅助函数: 计算运行天数
+function useRunningDays(startDateString) {
+  const [runningDays, setRunningDays] = useState(0);
+
+  useEffect(() => {
+    const startDate = new Date(startDateString);
+    const today = new Date();
+    
+    // 计算时间差 (毫秒)
+    const diffTime = Math.abs(today - startDate);
+    // 转换为天数
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    
+    setRunningDays(diffDays);
+  }, [startDateString]);
+
+  return runningDays;
+}
+
+
 // 默认数据 (数据库加载失败时的回退)
 const DEFAULT_PUBLIC_NAV = [
   {
@@ -107,11 +127,7 @@ async function fetchUserNav(userId) {
 // **数据保存：公共导航 (调用 RPC)**
 async function savePublicNavToDB(navData) {
   const categoriesToSave = navData.map(c => ({ 
-    // 【修复点 2：分类 ID 映射】
-    // 如果是数字ID (现有)，保留。如果是新生成的字符串ID，保留字符串。否则为 null。
-    id: typeof c.id === 'number' && c.id > 0 
-          ? c.id 
-          : (typeof c.id === 'string' ? c.id : null),
+    id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
     category: c.category, 
     sort_order: c.sort_order 
   }));
@@ -124,15 +140,10 @@ async function savePublicNavToDB(navData) {
       description: l.description, 
       icon: l.icon, 
       sort_order: l.sort_order || 0,
-      // 【修复点 3：链接 ID 映射】
-      // 只有现有的（不包含 link-temp-）链接 ID 才会被解析成数字 ID 用于更新，否则为 null 用于插入。
-      id: l.id && typeof l.id === 'string' && l.id.startsWith('link-') && !l.id.includes('link-temp-')
-          ? parseInt(l.id.replace('link-', '')) 
-          : null 
+      id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
     }))
   );
 
-  // 这里的 RPC 调用是最可能失败的地方，但前端结构是正确的。
   const { error } = await supabase.rpc('sync_public_nav', {
     categories_data: categoriesToSave,
     links_data: linksToSave
@@ -141,15 +152,14 @@ async function savePublicNavToDB(navData) {
   if (error) throw error;
 }
 
-// 🚀🚀🚀🚀🚀 最终修复函数 🚀🚀🚀🚀🚀
-// **数据保存：用户导航 (调用 RPC) - 个人导航保存修复**
+// **数据保存：用户导航 (调用 RPC)**
 async function saveUserNavToDB(userId, navData) {
     
-    // ✅ 修复 1：强制使用数组索引 (index) 作为 sort_order，避免前端产生的大数导致 'value out of range' 错误。
+    // 强制使用数组索引 (index) 作为 sort_order
     const categoriesToSave = navData.map((c, index) => ({ 
         id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
         category: c.category, 
-        sort_order: index, // <--- 修正为数组索引
+        sort_order: index, 
         user_id: userId
     }));
 
@@ -161,21 +171,20 @@ async function saveUserNavToDB(userId, navData) {
             url: l.url, 
             description: l.description, 
             icon: l.icon, 
-            sort_order: index, // <--- 修正为数组索引
+            sort_order: index, 
             id: l.id && l.id.startsWith('link-') ? parseInt(l.id.replace('link-', '')) : null 
         }))
     );
     
-    // ✅ 修复 2：将 RPC 参数名 'user_id' 替换为 'p_user_id'，以匹配 PostgreSQL 函数签名，解决 400 Bad Request 错误。
+    // 修正：参数名称必须是 p_user_id
     const { error } = await supabase.rpc('sync_my_nav', {
-        p_user_id: userId, // <-- 关键修复：参数名称必须是 p_user_id
+        p_user_id: userId, 
         categories_data: categoriesToSave,
         links_data: linksToSave
     });
 
     if (error) throw error;
 }
-// 🚀🚀🚀🚀🚀 修复结束 🚀🚀🚀🚀🚀
 
 // ====================================================================
 // 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
@@ -203,13 +212,11 @@ const LinkIcon = ({ link }) => {
   );
 };
 
-// 链接卡片
-const LinkCard = ({ link }) => (
-  <a 
-    href={link.url} 
-    target="_blank" 
-    rel="noopener noreferrer" 
-    className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border hover:shadow-lg transition flex gap-3"
+// 链接卡片 (已修改为可点击触发操作，实现手机 App 悬浮功能)
+const LinkCard = ({ link, onOpen }) => (
+  <div 
+    onClick={() => onOpen(link)} // 点击时弹出操作菜单
+    className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border hover:shadow-lg transition flex gap-3 cursor-pointer"
   >
     <LinkIcon link={link} />
     <div className="min-w-0 flex-1">
@@ -219,11 +226,11 @@ const LinkCard = ({ link }) => (
       )}
     </div>
     <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
-  </a>
+  </div>
 );
 
-// 公共导航显示组件
-const PublicNav = ({ navData = [], searchTerm = '' }) => {
+// 公共导航显示组件 (修改：接受 onLinkClick 回调)
+const PublicNav = ({ navData = [], searchTerm = '', user, viewMode, onLinkClick }) => {
   const filtered = useMemo(() => {
     if (!searchTerm) return navData;
     const t = searchTerm.toLowerCase();
@@ -258,7 +265,11 @@ const PublicNav = ({ navData = [], searchTerm = '' }) => {
           </div>
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {(category.links || []).map(link => (
-              <LinkCard key={link.id} link={link} />
+              <LinkCard 
+                key={link.id} 
+                link={link} 
+                onOpen={onLinkClick} // 传递点击事件
+              />
             ))}
           </div>
         </section>
@@ -347,9 +358,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
       alert('请输入分类名称');
       return;
     }
-    // 【修复点 1：分类 ID 生成】
-    // 使用字符串作为临时 ID，避免与数据库数字 ID混淆
-    const newId = `new-cat-${Date.now()}`; 
+    const newId = Date.now(); 
     
     const newCategoryData = {
       id: newId,
@@ -694,7 +703,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
           <div className="flex gap-3 items-center">
             <button 
                 onClick={handleSave} 
-                className={`px-4 py-2 text-white rounded font-semibold ${loading ? 'bg-gray-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+                className={`px-4 py-2 text-white rounded font-semibold ${loading ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'}`}
                 disabled={loading}
             >
                 {loading ? '保存中...' : '保存我的导航'}
@@ -829,8 +838,80 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave }) => {
 };
 
 // ====================================================================
-// AuthModal, WelcomeModal (认证和欢迎组件)
+// AuthModal, WelcomeModal, InfoModal, LinkActionModal (认证、欢迎、信息和链接操作组件)
 // ====================================================================
+const InfoModal = ({ title, content, onClose }) => {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl my-8">
+        <div className="p-6 border-b flex justify-between items-center">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{title}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+          {content}
+        </div>
+        <div className="p-4 border-t flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">关闭</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 链接操作模态框 (用于实现手机 App 悬浮功能)
+const LinkActionModal = ({ link, user, onClose, onEdit, isUserNav }) => {
+    
+    // 如果是用户导航，或者管理员编辑公共导航，则可以编辑
+    const canEdit = (user && isUserNav) || (user && user.email === ADMIN_EMAIL && !isUserNav);
+
+    return (
+        // z-50 确保在最顶层
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-sm">
+                <div className="text-center mb-4">
+                    <h3 className="text-xl font-bold truncate dark:text-white">{link.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{link.url}</p>
+                </div>
+                
+                <div className="space-y-3">
+                    {/* 1. 打开链接 (主要操作) */}
+                    <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={onClose}
+                        className="flex items-center justify-center w-full py-3 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                        <ExternalLink className="w-5 h-5 mr-2" /> 立即打开链接
+                    </a>
+                    
+                    {/* 2. 编辑链接 (如果可编辑) */}
+                    {canEdit && onEdit && (
+                        <button
+                            onClick={() => { onEdit(link); onClose(); }}
+                            className="flex items-center justify-center w-full py-3 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                        >
+                            <Edit className="w-5 h-5 mr-2" /> 编辑链接
+                        </button>
+                    )}
+                    
+                    {/* 3. 取消 */}
+                    <button
+                        onClick={onClose}
+                        className="w-full py-3 border rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                    >
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const AuthModal = ({ onClose, onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -980,7 +1061,7 @@ const WelcomeModal = ({ onClose }) => {
             </div>
             <div>
               <h4 className="font-medium">管理您的导航</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-300">点击右上角的"管理我的导航"来添加分类和链接</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">点击右下角的"我的导航"按钮来添加分类和链接</p>
             </div>
           </div>
 
@@ -1020,8 +1101,17 @@ export default function App() {
   const [publicNav, setPublicNav] = useState([]);
   const [userNav, setUserNav] = useState([]);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [selectedLink, setSelectedLink] = useState(null); // 存储被点击的链接，用于浮动菜单
   
-  // 搜索相关状态
+  // 新增：信息模态框状态
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
+  
+  // 网站运行天数计算的起始日期 (可以根据实际情况修改)
+  const START_DATE = '2023-01-01'; 
+  const runningDays = useRunningDays(START_DATE); 
+
+  // 站外搜索配置
   const [searchMode, setSearchMode] = useState('internal'); 
   const searchEngines = useMemo(() => ([
     { id: 'internal', name: '站内搜索', url: '#' },
@@ -1033,6 +1123,31 @@ export default function App() {
 
   const debouncedSearch = useDebounce(searchTerm, 300);
   const isAdmin = user && user.email === ADMIN_EMAIL;
+  
+  // 网站信息内容 (来自用户要求)
+  const ABOUT_CONTENT = `关于第一象限 极速导航网
+
+【站点功能】
+
+本站致力于提供一个简洁、快速、纯粹的网址导航服务。我们精心筛选了常用、高效和高质量的网站链接，并将它们按类别清晰展示，旨在成为您日常网络冲浪的起点站。
+【创设初衷：拒绝广告】
+在信息爆炸的时代，许多导航网站充斥着干扰性的广告和推广内容，严重影响了用户体验和访问速度。第一象限 创建本站的初衷正是为了提供一个零广告、零干扰的净土。我们承诺，本站将永久保持简洁干净，只专注于网址导航这一核心功能。
+【作者】
+由 第一象限 独立设计与开发。
+联系邮箱:${ADMIN_EMAIL}`;
+
+  const DISCLAIMER_CONTENT = `免责声明
+
+1. 内容准确性
+
+本网站（第一象限 极速导航网）所提供的所有链接信息均来源于互联网公开信息或用户提交。本站会尽力确保信息的准确性和时效性，但不对信息的完整性、准确性、时效性或可靠性作任何形式的明示或暗示的担保。
+2. 外部链接责任
+本站提供的所有外部网站链接（包括但不限于导航网站、资源链接等）仅为方便用户访问而设置。本站对任何链接到的第三方网站的内容、政策、产品或服务不承担任何法律责任。用户点击并访问外部链接时，即表示自行承担由此产生的一切风险。
+3. 法律法规遵守
+用户在使用本站服务时，须承诺遵守当地所有适用的法律法规。任何用户利用本站从事违反法律法规的行为，均与本站无关，本站不承担任何法律责任。
+4. 图标与版权声明
+本站网址图标有些因为网络原因、技术缺陷，可能导致图标显示不准确。如果涉及侵权，请联系作者删除。作者邮箱：${ADMIN_EMAIL}
+使用本网站即表示您已阅读、理解并同意本声明的所有内容。`;
   
   // 认证和数据加载
   useEffect(() => {
@@ -1085,10 +1200,6 @@ export default function App() {
       try {
         const data = await fetchUserNav(user.id);
         if (data.length === 0) {
-            // 注意：这里用户的原始代码中使用了 Date.now() 作为 newId，在 UserPanel 的 handleAddCategory 中也是。
-            // 考虑到用户导航只进行 INSERT/UPDATE，这里可以暂时保留数字ID，但为了安全性和一致性，最好也改成字符串。
-            // 但因为用户没有反馈用户导航有bug，且用户导航的 saveUserNavToDB 逻辑中，新ID最终也是被 null 了，
-            // 所以这里为了不引入其他未知风险，暂时保留原始代码逻辑，只修复公共导航的问题。
             setUserNav([{
                 id: Date.now(), 
                 user_id: user.id,
@@ -1166,6 +1277,24 @@ export default function App() {
       // 站内搜索由 debouncedSearch 状态自动触发 PublicNav 过滤
   };
 
+  // 处理链接卡片点击，弹出操作菜单 (实现 App 悬浮功能)
+  const handleLinkClick = useCallback((link) => {
+    setSelectedLink(link);
+  }, []);
+  
+  // 处理浮动菜单中的编辑操作
+  const handleLinkEditFromModal = (link) => {
+      setSelectedLink(null); // 关闭模态框
+      // 这里的逻辑比较粗略，目的是通知用户去管理面板
+      alert(`请前往 "${viewMode === 'user' ? '我的导航' : '公共导航'}" 的管理面板中，找到链接 "${link.name}" 并进行编辑。`);
+      
+      if (viewMode === 'user' && user) {
+          setShowUserPanel(true);
+      } else if (viewMode === 'public' && isAdmin) {
+          setShowAdminPanel(true);
+      }
+  }
+
   // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1173,6 +1302,9 @@ export default function App() {
         setShowAuth(false);
         setShowAdminPanel(false);
         setShowUserPanel(false);
+        setShowAboutModal(false); 
+        setShowDisclaimerModal(false); 
+        setSelectedLink(null); // 关闭链接操作模态框
       }
       if (e.metaKey || e.ctrlKey) {
         if (e.key === 'k') {
@@ -1200,7 +1332,7 @@ export default function App() {
   // 渲染逻辑
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-[#0b1020] text-gray-900 dark:text-white">
-      {/* 顶部导航栏 - 重构结构实现居中和堆叠 */}
+      {/* 顶部导航栏 */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 py-4">
           
@@ -1210,12 +1342,12 @@ export default function App() {
             
             {/* 居中标题 */}
             <div className="text-center flex-1 min-w-0">
-              <h1 className="text-3xl font-extrabold text-gray-800 dark:text-white whitespace-nowrap">
+              <h1 className="text-3xl font-extrabold whitespace-nowrap" style={{ color: '#6A5ACD' }}>
                 极速导航网
               </h1>
             </div>
             
-            {/* 右侧：用户操作 - 仅保留登录/注册和已登录用户的邮箱显示 */}
+            {/* 右侧：用户操作 */}
             <div className="flex items-center gap-3 w-1/3 justify-end">
               
               {!user ? (
@@ -1230,7 +1362,14 @@ export default function App() {
                   <span className="text-sm text-gray-600 dark:text-gray-300 hidden lg:inline truncate max-w-[100px]">
                     {user.email}
                   </span>
-                  {/* 【UI 修复】: 管理/退出按钮已移至右下角的浮动操作栏 */}
+                  {/* 管理员和用户管理按钮已移至右下角悬浮 */}
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
+                    title="退出登录"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
                 </div>
               )}
             </div>
@@ -1245,7 +1384,7 @@ export default function App() {
                   onChange={(e) => {
                       setSearchMode(e.target.value);
                       if (e.target.value !== 'internal') {
-                          setSearchTerm(''); // 切换到站外搜索时，清空站内搜索的过滤结果
+                          setSearchTerm(''); 
                       }
                   }}
                   className="p-2 border rounded-l-full dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
@@ -1257,14 +1396,14 @@ export default function App() {
                   ))}
               </select>
 
-              {/* 搜索输入框 */}
+              {/* 搜索输入框 - ✅ 搜索框背景色已加深 (bg-gray-200) */}
               <input
                   id="searchInput"
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={searchMode === 'internal' ? '搜索站内链接... (按 / 聚焦)' : `使用 ${searchEngines.find(e => e.id === searchMode).name} 搜索...`}
-                  className="flex-1 px-4 py-2 rounded-r-full border dark:bg-gray-700 dark:border-gray-600"
+                  placeholder={searchMode === 'internal' ? '搜索站内链接... (按 / 聚焦)' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
+                  className="flex-1 px-4 py-2 rounded-r-full border bg-gray-200 dark:bg-gray-700 dark:border-gray-600"
               />
               
               {/* 提交按钮（对站外搜索有效） */}
@@ -1308,49 +1447,46 @@ export default function App() {
           <PublicNav 
             navData={user && viewMode === 'user' ? userNav : publicNav} 
             searchTerm={searchMode === 'internal' ? debouncedSearch : ''} 
+            user={user} 
+            viewMode={viewMode}
+            onLinkClick={handleLinkClick} // 传递链接点击处理函数
           />
         )}
       </main>
-      
-      {/* 🚀 【UI 修复】：浮动操作栏 (Floating Utility Bar) */}
-      {user && (
-        <div className="fixed bottom-6 right-6 z-30 flex flex-col items-end space-y-3">
-            {/* 管理公共导航 - 仅管理员可见 */}
-            {isAdmin && (
-                <button
-                    onClick={() => { setShowAdminPanel(true); setShowUserPanel(false); }}
-                    className="p-4 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition"
-                    title="管理公共导航 (Ctrl+A)"
-                >
-                    <Settings className="w-6 h-6" />
-                </button>
-            )}
-            {/* 管理我的导航 - 所有用户可见 */}
-            <button
-                onClick={() => { setShowUserPanel(true); setShowAdminPanel(false); }}
-                className="p-4 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition"
-                title="管理我的导航 (Ctrl+U)"
-            >
-                <User className="w-6 h-6" />
-            </button>
-            {/* 退出登录 */}
-            <button
-                onClick={handleLogout}
-                className="p-4 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition"
-                title="退出登录"
-            >
-                <LogOut className="w-6 h-6" />
-            </button>
-        </div>
-      )}
 
-      {/* 模态框 - 已修复 onSave 属性 */}
+      {/* ✅ 右下角悬浮管理按钮 (Floating Action Buttons) */}
+      <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3 z-50">
+        
+        {/* 1. 管理公共导航 (仅管理员可见) */}
+        {isAdmin && (
+          <button
+            onClick={() => { setShowAdminPanel(true); setShowUserPanel(false); }}
+            className="p-4 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition transform hover:scale-105"
+            title="管理公共导航 (Ctrl+A)"
+          >
+            <Settings className="w-6 h-6" />
+          </button>
+        )}
+
+        {/* 2. 管理我的导航 (仅登录用户可见) */}
+        {user && (
+          <button
+            onClick={() => { setShowUserPanel(true); setShowAdminPanel(false); }}
+            className="p-4 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition transform hover:scale-105"
+            title="管理我的导航 (Ctrl+U)"
+          >
+            <User className="w-6 h-6" />
+          </button>
+        )}
+      </div>
+
+      {/* 模态框 */}
       {showAuth && (<AuthModal onClose={() => setShowAuth(false)} onLogin={(u) => { setUser(u); setShowAuth(false); }}/>)}
       {showAdminPanel && isAdmin && (
         <AdminPanel 
           navData={publicNav} 
           setNavData={setPublicNav} 
-          onSave={handleSavePublicNav} // 传递公共导航保存函数
+          onSave={handleSavePublicNav} 
           onClose={() => setShowAdminPanel(false)} 
         />
       )}
@@ -1359,20 +1495,75 @@ export default function App() {
           user={user} 
           userNav={userNav} 
           setUserNav={setUserNav} 
-          onSave={handleSaveUserNav} // 传递用户导航保存函数
+          onSave={handleSaveUserNav} 
           onClose={() => setShowUserPanel(false)} 
         />
       )}
       {showWelcome && (<WelcomeModal onClose={() => setShowWelcome(false)} />)}
       
+      {/* 信息模态框 */}
+      {showAboutModal && (
+        <InfoModal
+          title="关于本站"
+          content={ABOUT_CONTENT}
+          onClose={() => setShowAboutModal(false)}
+        />
+      )}
+      {showDisclaimerModal && (
+        <InfoModal
+          title="免责声明"
+          content={DISCLAIMER_CONTENT}
+          onClose={() => setShowDisclaimerModal(false)}
+        />
+      )}
+
+      {/* ✅ 链接操作浮动模态框 (实现手机 App 悬浮功能) */}
+      {selectedLink && (
+        <LinkActionModal
+          link={selectedLink}
+          user={user}
+          isUserNav={viewMode === 'user'}
+          onClose={() => setSelectedLink(null)}
+          onEdit={handleLinkEditFromModal}
+        />
+      )}
+
       {/* 页尾 */}
       <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>&copy; {new Date().getFullYear()} 极速导航网. All rights reserved. | Powered by Supabase & React.</p>
-          <p className="mt-2">
-            <a href="#" className="hover:text-blue-500">联系我们</a> | 
-            <a href="#" className="hover:text-blue-500 ml-2">隐私政策</a>
+        <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
+          
+          {/* 顶行：标题和版权 */}
+          <h4 className="text-3xl font-extrabold" style={{ color: '#6A5ACD' }}>
+            第一象限
+          </h4>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            &copy; {new Date().getFullYear()} 极速导航网. 保留所有权利.
           </p>
+
+          {/* 中行：运行天数 */}
+          <p className="text-base text-gray-500 dark:text-gray-400 font-medium flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            本站已稳定运行 <span className="mx-1 font-bold text-blue-600 dark:text-blue-400">{runningDays}</span> 天
+          </p>
+
+          {/* 底行：链接和图标 */}
+          <div className="flex items-center justify-center text-base text-gray-500 dark:text-gray-400 pt-2">
+            {/* 链接改为按钮并打开模态框 */}
+            <button onClick={() => setShowAboutModal(true)} className="hover:text-blue-500 mx-2">关于本站</button>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <button onClick={() => setShowDisclaimerModal(true)} className="hover:text-blue-500 mx-2">免责声明</button>
+            <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
+            
+            {/* GitHub Icon - 链接已更新 */}
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" title="GitHub 仓库" className="hover:text-blue-500 mx-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.8a4 4 0 0 0-.8-2.5c2.7-.4 5.5-1.4 5.5-6s-1.8-4-5.5-4a7.4 7.4 0 0 0-1.8.2.6.6 0 0 1-.3-.3c-.2-.5-.8-2.6-1-3.2-.3-1-.9-1-1.3-.8-.4 0-1 .2-1.3.8-.2.6-.8 2.7-1 3.2a.6.6 0 0 1-.3.3 7.4 7.4 0 0 0-1.8-.2c-3.7 0-5.5 1.5-5.5 4s1.8 5.6 5.5 6a4 4 0 0 0-.8 2.5V22"></path></svg>
+            </a>
+            
+            {/* Globe Icon - 链接已更新 */}
+            <a href="https://adcwwvux.eu-central-1.clawcloudrun.com/" target="_blank" rel="noopener noreferrer" title="其他站点" className="hover:text-blue-500 mx-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><path d="M2 12h20"></path></svg>
+            </a>
+          </div>
         </div>
       </footer>
 
