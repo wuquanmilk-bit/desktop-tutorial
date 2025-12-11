@@ -1,8 +1,8 @@
 // src/App.jsx
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-// 修正：将 GitHub 更改为 Github，并导入 Globe
-import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid, Github, Globe } from 'lucide-react'; 
+// 修正：将 GitHub 更改为 Github，并导入 Globe, Download
+import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid, Github, Globe, Download } from 'lucide-react'; 
 import './index.css';
 
 // ====================================================================
@@ -1140,7 +1140,7 @@ function App() {
   const debouncedSearch = useDebounce(searchTerm, 300);
   const [searchMode, setSearchMode] = useState('internal'); // 'internal' | 'google' | 'baidu' | 'bing'
 
-  const appStartDate = '2024-01-01'; // 应用启动日期
+  const appStartDate = '2022-06-01'; // 应用启动日期
   const runningDays = useRunningDays(appStartDate);
   
   const isAdmin = user && user.email === ADMIN_EMAIL;
@@ -1549,7 +1549,7 @@ function App() {
         />
       )}
       
-      {/* 页尾 - 包含运行天数和更新后的图标 */}
+      {/* 页尾 - 包含运行天数和 APK 下载按钮 */}
       <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>
@@ -1573,9 +1573,17 @@ function App() {
                 <Github className="w-5 h-5" /> 
             </a>
             
-            {/* **地球 Icon 按钮** */}
-            <a href="https://adcwwvux.eu-central-1.clawcloudrun.com" target="_blank" rel="noopener noreferrer" title="外部链接" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1">
-                <Globe className="w-5 h-5" />
+            {/* **APK 下载按钮 (使用 Download 图标)** */}
+            {/* 注意：该链接包含一个限时的 Supabase token，到期后需更新。 */}
+            <a 
+                href="https://zuplqpojcjwbmmjpacqx.supabase.co/storage/v1/object/sign/apk-downloads/jisudaohang01.apk?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lYjY4NTU2ZS03N2ExLTRiZjItOWQ0Yi0xMGM5NGMyZWRmOTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcGstZG93bmxvYWRzL2ppc3VkYW9oYW5nMDEuYXBrIiwiaWF0IjoxNzY1NDIxNjMzLCJleHAiOjE3OTY5NTc2MzN9.cpsgRfgT6_PMFh0iisMRUC3xXCNUMwWILoZtnIQvNZU" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                title="安卓 APK 下载 (注意: 链接包含限时 token)" 
+                className="ml-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
+            >
+                <Download className="w-5 h-5" />
+                <span className="hidden sm:inline">APK 下载</span> 
             </a>
           </div>
         </div>
