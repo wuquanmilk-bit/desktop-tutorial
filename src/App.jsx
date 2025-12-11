@@ -10,6 +10,19 @@ import './index.css';
 // ====================================================================
 const ADMIN_EMAIL = '115382613@qq.com';
 
+// --------------------------------------------------------------------
+// **图标 Base64 编码区域**
+// --------------------------------------------------------------------
+// **重要说明：请将以下占位符替换为您实际的 SVG 或 PNG Base64 字符串。**
+// 
+// 转换方法：将图标文件上传到在线 Base64 转换工具，将结果粘贴到下方。
+// 格式应为：'data:image/svg+xml;base64,...' 或 'data:image/png;base64,...'
+const GITHUB_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxNzUiIGhlaWdodD0iMTc1IiB2aWV3Qm94PSIwLDAsMTc1LDE3NSI+PGcgaWQ9InN2Z18zIj48cGF0aCBmaWxsPSIjMjAyNjI3IiBkPSJNMzguNjY2NywzOC42NjY3aDEzNy42NjY2VjEzMi4zMzMzaC0xMzcuNjY2NlYzOC42NjY3WiIgY2xhc3M9ImdhdGUtaWNvbiByZWd1bGFyIi8+PC9nPg8vc3ZnPg=='; // **请替换为真实的 GitHub Base64**
+const SUPABASE_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMjU2IDBDMTE0LjYgMCAwIDExNC42IDAgMjU2czExNC42IDI1NiAyNTYgMjU2IDI1Ni0xMTQuNiAyNTYtMjU2UzM5Ny40IDAgMjU2IDB6TTI1NiA1MS4yYy01Ny4yIDAtMTA1LjcgMjcuMi0xMzUuOCAzOC4xTDM1My4zIDM2Ni41Yy0xMS41LTEwLjEtMjUuNi0xNy40LTQxLjUtMjEuNCAwLTIwLjYtMTYuOS0zNy41LTM3LjUtMzcuNS0yMC42IDAtMzcuNSAxNi45LTM3LjUgMzcuNSAwIDIwLjYgMTYuOSA0MS4yIDQxLjUgMzcuNUw4MC43IDQyMy41Yy01LjYgMy4xLTEwLjQgNy4zLTE0LjkgMTIuNi02LjQgNy44LTEwLjEgMTcuMS0xMC4xIDI4LjIgMCAxNC45IDcuMyAyOC41IDE5LjMgMzcuNSAyLjQgMTkuMyAxOS4zIDM0LjMgMzkuNSAzMS42IDExLjItMS40IDIyLjItNC42IDMyLjYtOS42bDEzNi43LTE1MS44YzIxLjQgNS4xIDQxLjIgMTkuMyA1MS4yIDM5LjYgMjcuMiA1Ny4yLTM2LjYgMTA1LjctOTMuOCAxMzUuOC0zMC43IDMxLjQtNjkuOSAyOS41LTk5LjcgMzcuNWwtODQuMy04NC4zYy0zLTIuNC01LjYtNS42LTUuNi05LjMgMy44LTE4LjQgMTkuMy0zMS40IDM3LjUtMzEuNCAyMy4zIDAgMzcuNSA5LjggMzkuNSA5LjggNDcuOS01NC42IDUxLjItMTI2LjYgOS44LTE2MS4yTDQyMy41IDUwMy43YzYuOCAzLjggMTMuNSAyLjQgMTcuMi0zLjUgMzYuNy00Mi42IDMyLjUtMTE1LjYtOS44LTE2NS41QzQyMy41IDEzNy4xIDMyMy43IDUyLjEgMjU2IDUxLjJ6IiBmaWxsPSIjMUMyMzJGOCIvPjwvc3ZnPg=='; // **请替换为真实的 Supabase Base64**
+const VERCEL_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTMwLjM4IDEuNTdMMTYuMTMgMjUuMjNMMS44OCA1LjgxYTIuNjkgMi42OSAwIDAgMSAxLjkzLTMuMTFsMjYuNzgtLjk5YTIuNjggMi42OCAwIDAgMSAuNjUgLjgyeiIvPjwvc3ZnPg=='; // **请替换为真实的 Vercel Base64**
+const FIGMA_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUuMDAwMDAwMDAwMDAwMDA0IiBoZWlnaHQ9IjM3LjQ5OTk5OTk5OTk5OTk5NSIgdmlld0JveD0iMCAwIDI1IDM3LjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjY2NjcgMzcuNUgyNS4wVjI1LjAwMDJDMjUuMDAwMiAzNC4yNzM4IDE4LjY3MjcgMzcuNSAxNi42NjY3IDM3LjVaTTI1LjAwMDEgMTIuNDk5OUgyNS4wMDEyVjI1LjAwMDJDMTguNjcyNyAyNS4wMDAzIDE4LjY3MTMgMjUuMDAwMSAxNi42NjY3IDI1LjAwMDJWMTEuNzA0OEwyNS4wMDEyIDExLjcxMjIgMjUuMDAwMSAxMi40OTk5WiIgZmlsbD0iIzAwQzE5RSIvPjxwYXRoIGQ9Ik0xNi42NjY3IDBIMjUuMDAwMVYxMi41MDAxSDE2LjY2NjdWMFoiIGZpbGw9IiNGRDBRQUYiLz48cGF0aCBkPSJNMCAwSDE2LjY2NjZWMTEuNzA0OEgwVjBaIiBmaWxsPSIjRjkyRjI0Ii8+PHBhdGggZD0iTTE2LjY2NjcgMTEuNzA0OEgwVjI1LjAwMDJIMS45MDE0N0MxLjkwMTQ3IDI1LjAwMDMgMTAuNjUxNCAyNS4wMDYxIDE2LjY2NjcgMjUuMDAwMlYxMS43MDQ4WiIgZmlsbD0iIzEwOTRGMyIvPjxwYXRoIGQ9Ik0xNi42NjY2IDI1LjAwMDJWMzcuNDk5OUgxLjkxNDYxQzEuOTE0NjEgMzQuMjk1IDcuNzI5OTIgMzQuMzM0MyAxNi42NjY2IDI1LjAwMDJaIiBmaWxsPSIjQUUzRTZCIi8+PC9zdmc+'; // **请替换为真实的 Figma Base64**
+const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmVyU2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuorgvMjAwMC9zdmciPgogPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4wNzMgMCAwIDEuMDczIC0zLjY2OSAtMy42NjkpIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCg1LjIzMjUgMCAwIDUuMjMyNSAtMjQwLjgxIC0yNDAuODEpIj4KICAgPHBhdGggZD0ibTQ4LjczNiA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTM3LjU3NyA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTI2LjQxOCA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICA8L2c+CiA8L2c+CiA8L3N2Zz4K'; // **请替换为真实的 Unsplash Base64**
+
 // 工具函数
 function useDebounce(value, delay = 200) {
   const [v, setV] = useState(value);
@@ -20,7 +33,7 @@ function useDebounce(value, delay = 200) {
   return v;
 }
 
-// 辅助函数: 计算运行天数
+// 辅助函数: 计算运行天数 (保持不变)
 function useRunningDays(startDateString) {
   const [runningDays, setRunningDays] = useState(0);
 
@@ -40,16 +53,19 @@ function useRunningDays(startDateString) {
 }
 
 
-// 默认数据 (数据库加载失败时的回退)
+// 默认数据 (数据库加载失败时的回退) - 已硬编码 Base64
 const DEFAULT_PUBLIC_NAV = [
   {
     id: 1,
     category: '常用开发',
     sort_order: 1,
     links: [
-      { id: 'link-1', name: 'GitHub', url: 'https://github.com', description: '代码托管平台', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg' },
-      { id: 'link-2', name: 'Supabase', url: 'https://supabase.com', description: '后端即服务' },
-      { id: 'link-3', name: 'Vercel', url: 'https://vercel.com', description: '部署平台' }
+      // GitHub: 使用 Base64 硬编码
+      { id: 'link-1', name: 'GitHub', url: 'https://github.com', description: '代码托管平台', icon: GITHUB_ICON_BASE64 },
+      // Supabase: 使用 Base64 硬编码 (注意：原代码中 Supabase 缺失 icon 字段，现已添加)
+      { id: 'link-2', name: 'Supabase', url: 'https://supabase.com', description: '后端即服务', icon: SUPABASE_ICON_BASE64 },
+      // Vercel: 使用 Base64 硬编码
+      { id: 'link-3', name: 'Vercel', url: 'https://vercel.com', description: '部署平台', icon: VERCEL_ICON_BASE64 }
     ]
   },
   {
@@ -57,8 +73,10 @@ const DEFAULT_PUBLIC_NAV = [
     category: '设计资源',
     sort_order: 2,
     links: [
-      { id: 'link-4', name: 'Figma', url: 'https://figma.com', description: '设计工具' },
-      { id: 'link-5', name: 'Unsplash', url: 'https://unsplash.com', description: '免费图片' }
+      // Figma: 使用 Base64 硬编码
+      { id: 'link-4', name: 'Figma', url: 'https://figma.com', description: '设计工具', icon: FIGMA_ICON_BASE64 },
+      // Unsplash: 使用 Base64 硬编码
+      { id: 'link-5', name: 'Unsplash', url: 'https://unsplash.com', description: '免费图片', icon: UNSPLASH_ICON_BASE64 }
     ]
   }
 ];
@@ -186,14 +204,14 @@ async function saveUserNavToDB(userId, navData) {
 // 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
 // ====================================================================
 
-// 链接图标组件
+// 链接图标组件 (已优化，Base64 硬编码的图标会直接加载，外部网络失败后不再尝试 Favicon API)
 const LinkIcon = ({ link }) => {
   const [err, setErr] = useState(false);
   
-  // 优先级 1: 硬编码或数据库指定的 icon URL
+  // 优先级 1: 硬编码或数据库指定的 icon URL (包括 Base64 字符串)
   const userIconUrl = link.icon; 
   
-  // 优先级 2: Favicon API
+  // 优先级 2: Favicon API (当 userIconUrl 为空时使用，但不再作为失败回退)
   const domain = useMemo(() => {
         try {
             return new URL(link.url).hostname;
@@ -206,9 +224,10 @@ const LinkIcon = ({ link }) => {
         ? `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(link.url)}&size=32`
         : null;
 
-  // 决定最终使用的 URL: 优先使用 userIconUrl，如果 userIconUrl 失败，则尝试 faviconUrl
+  // 决定最终使用的 URL: 优先使用 userIconUrl，如果 userIconUrl 不存在，则使用 faviconUrl
   const finalIconUrl = userIconUrl || faviconUrl;
   
+  // 如果没有可尝试的 URL，或者图标已明确失败 (err=true)，则直接回退到文字/默认图标
   if (!finalIconUrl || err) {
        // 优先级 3: 默认文字图标 (回退)
       return (
@@ -221,19 +240,14 @@ const LinkIcon = ({ link }) => {
   return (
     <div className="w-10 h-10 rounded-lg border bg-gray-50 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
         <img 
-          // 只有在 userIconUrl 存在且未出错时，才使用 userIconUrl，否则使用 faviconUrl
           src={finalIconUrl} 
           alt={`${link.name} icon`} 
           className="w-6 h-6 object-contain" 
           onError={() => {
-            // 如果 userIconUrl 失败，且存在 faviconUrl，则尝试 FaviconUrl
-            if (userIconUrl && faviconUrl && finalIconUrl === userIconUrl) {
-                // 重新加载，但这次使用 faviconUrl
-                setErr(true); // 触发重新渲染，下次将走 Favicon 或回退
-            } else {
-                // 如果 FaviconUrl 也失败，或者一开始就没有指定 icon，则直接回退到文字
-                setErr(true);
-            }
+            // **优化点**：一旦当前尝试的 URL 失败（无论是 userIconUrl 还是 faviconUrl），
+            // 立即设置 err=true，下次渲染直接走文字回退。
+            // 这样做可以避免在网络受限情况下尝试加载 Favicon API 导致的二次延迟或失败。
+            setErr(true); 
           }}
         />
     </div>
@@ -354,7 +368,7 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
       <input
         type="url"
         className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
-        placeholder="指定图标 URL (可选，优先使用)"
+        placeholder="指定图标 URL 或 Base64 字符串 (可选，优先使用)"
         value={formData.icon}
         onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
       />
