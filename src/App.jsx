@@ -1406,7 +1406,7 @@ function App() {
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder={searchMode === 'internal' ? '搜索站内链接... (按 / 聚焦)' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
+                                placeholder={searchMode === 'internal' ? '请输入搜索内容' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
                                 // 关键修改：添加 pl-10 (左侧填充) 为图标留出空间
                                 // 输入框使用 rounded-full (全圆角)
                                 className="w-full px-4 py-3 pl-10 rounded-full border border-gray-700 bg-gray-700 text-white placeholder-gray-400 outline-none focus:ring-blue-500 focus:border-blue-500"
