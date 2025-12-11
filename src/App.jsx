@@ -1,8 +1,17 @@
 // src/App.jsx
+// =========================================================================
+// 🎯 步骤 A：替换顶部的所有导入语句（请用这个代码块替换您文件顶部所有的 import... 语句）
+// =========================================================================
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-// 修正：将 GitHub 更改为 Github，并导入 Globe, Download
-import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid, Github, Globe, Download } from 'lucide-react'; 
+
+// 确保导入了所有新旧图标，解决了 Cloud, Database 等图标缺失的问题
+import { 
+    ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid, 
+    Github, Globe, Download, Cloud, Database, Bot, Play, Camera, Network, Server, ShoppingCart, Wand, Monitor, 
+    Wrench, Code, Clock 
+} from 'lucide-react'; 
+
 import './index.css';
 
 // ====================================================================
@@ -205,53 +214,124 @@ async function saveUserNavToDB(userId, navData) {
 // ====================================================================
 
 // 链接图标组件 (已优化，Base64 硬编码的图标会直接加载，外部网络失败后不再尝试 Favicon API)
-const LinkIcon = ({ link }) => {
-  const [err, setErr] = useState(false);
-  
-  // 优先级 1: 硬编码或数据库指定的 icon URL (包括 Base64 字符串)
-  const userIconUrl = link.icon; 
-  
-  // 优先级 2: Favicon API (当 userIconUrl 为空时使用，但不再作为失败回退)
-  const domain = useMemo(() => {
-        try {
-            return new URL(link.url).hostname;
-        } catch (e) {
-            return '';
+// =========================================================================
+// 🎯 代码块 2: 完整的图标逻辑代码块 (替换旧的 LinkIcon 组件和它之前的所有图标辅助函数)
+// =========================================================================
+
+// ===================================
+// 1. 图标映射和获取函数 (Lucide 回退逻辑)
+// ===================================
+
+// 定义 Lucide 图标的名称映射表
+const ICON_MAP = {
+    // 基础和常用
+    'GITHUB': Github,
+    'GIT': Github,
+    'CLOUD': Cloud,
+    'SUPABASE': Database,
+    'DB': Database,
+    'NETWORK': Network,
+    'SERVER': Server,
+    'SHOPPING': ShoppingCart,
+    'MONITOR': Monitor,
+
+    // AI/工具
+    'BOT': Bot,
+    'AI': Bot,
+    'GPT': Bot,
+    'WAND': Wand,
+    'WRITER': Wrench,
+
+    // 内容和媒体
+    'PLAY': Play,
+    'YOUTUBE': Play,
+    'CAMERA': Camera,
+    
+    // 开发/技术
+    'CODE': Code,
+    
+    // 账户和时间
+    'TIME': Clock,
+    'MAIL': Mail,
+    'LOGIN': User,
+    'PASSWORD': Lock
+};
+
+// 工具函数：根据链接名称获取匹配的 Lucide 图标组件
+const getLucideIcon = (name) => {
+    // 如果名称为空，回退到地球图标
+    if (!name) return Globe; 
+    
+    const upperName = name.toUpperCase();
+    
+    // 尝试匹配链接名称
+    for (const key in ICON_MAP) {
+        if (upperName.includes(key)) {
+            return ICON_MAP[key];
         }
-    }, [link.url]);
+    }
+    
+    // 最终回退：如果没有任何匹配，使用 Globe
+    return Globe; 
+};
 
-    const faviconUrl = domain 
-        ? `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(link.url)}&size=32`
-        : null;
+// ===================================
+// 2. LinkIcon 核心组件 (三层图标逻辑)
+// ===================================
 
-  // 决定最终使用的 URL: 优先使用 userIconUrl，如果 userIconUrl 不存在，则使用 faviconUrl
-  const finalIconUrl = userIconUrl || faviconUrl;
-  
-  // 如果没有可尝试的 URL，或者图标已明确失败 (err=true)，则直接回退到文字/默认图标
-  if (!finalIconUrl || err) {
-       // 优先级 3: 默认文字图标 (回退)
-      return (
-          <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-lg font-bold text-gray-600 dark:text-gray-300 flex-shrink-0">
-              {link.name ? link.name.substring(0, 1).toUpperCase() : <ExternalLink className="w-5 h-5 text-blue-500" />}
-          </div>
-      );
-  }
-  
-  return (
-    <div className="w-10 h-10 rounded-lg border bg-gray-50 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
-        <img 
-          src={finalIconUrl} 
-          alt={`${link.name} icon`} 
-          className="w-6 h-6 object-contain" 
-          onError={() => {
-            // **优化点**：一旦当前尝试的 URL 失败（无论是 userIconUrl 还是 faviconUrl），
-            // 立即设置 err=true，下次渲染直接走文字回退。
-            // 这样做可以避免在网络受限情况下尝试加载 Favicon API 导致的二次延迟或失败。
-            setErr(true); 
-          }}
-        />
-    </div>
-  );
+/**
+ * 负责显示链接图标的组件。
+ * 优先级: link.icon (自定义/Base64) -> 外部 Favicon API (DuckDuckGo) -> Lucide 图标回退。
+ */
+const LinkIcon = ({ link }) => {
+    // 状态：用于跟踪图片加载是否发生错误 (确保只尝试一次)
+    const [hasError, setHasError] = useState(false);
+
+    // 效应：当链接或图标源改变时，重置错误状态，重新尝试加载
+    useEffect(() => {
+        setHasError(false);
+    }, [link.url, link.icon]);
+
+    // 确定图标 URL 的核心逻辑
+    const imageUrl = useMemo(() => {
+        // 优先级 1: 如果 link.icon 字段有值，直接使用它 (自定义 URL 或 Base64)
+        if (link.icon) {
+            return link.icon;
+        }
+
+        // 优先级 2: 如果 link.icon 为空，使用外部 Favicon API 自动抓取
+        try {
+            const urlObj = new URL(link.url);
+            // 使用 DuckDuckGo 的公共代理服务，稳定且比 Google Favicon 响应快
+            return `https://icons.duckduckgo.com/ip3/${urlObj.hostname}.ico`;
+        } catch {
+            // URL 无效，返回空字符串，进入 Lucide 回退模式
+            return ''; 
+        }
+    }, [link.icon, link.url]);
+
+    // 获取 Lucide 回退图标组件
+    const FallbackIconComponent = getLucideIcon(link.name); 
+    
+    return (
+        // 样式容器：使用您文件中 LinkIcon 容器原本的样式
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
+            {/* 检查条件：如果加载失败 (hasError) 或没有生成 URL (!imageUrl)，则显示回退图标 */}
+            {hasError || !imageUrl ? (
+                // 优先级 3: 显示 Lucide 回退图标 (使用 link.name 匹配)
+                <FallbackIconComponent className="w-6 h-6 text-blue-500 dark:text-blue-400"/>
+            ) : (
+                // 优先级 1/2: 显示远程图片 (Base64 或 Favicon)
+                <img 
+                    src={imageUrl} 
+                    alt={`${link.name} icon`} 
+                    className="w-6 h-6 object-contain" 
+                    onError={() => setHasError(true)} // ❗ 关键：图片加载失败时，触发 hasError=true 进入 Lucide 回退
+                    loading="lazy"
+                />
+            )}
+        </div>
+    );
 };
 
 // 链接卡片 (保持不变)
