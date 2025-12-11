@@ -1,7 +1,8 @@
 // src/App.jsx
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid } from 'lucide-react'; // 引入 LayoutGrid (网格图标)
+// 修正：将 GitHub 更改为 Github，并导入 Globe
+import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid, Github, Globe } from 'lucide-react'; 
 import './index.css';
 
 // ====================================================================
@@ -185,7 +186,7 @@ async function saveUserNavToDB(userId, navData) {
 // 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
 // ====================================================================
 
-// 链接图标组件 (已修改：支持硬编码图标)
+// 链接图标组件
 const LinkIcon = ({ link }) => {
   const [err, setErr] = useState(false);
   
@@ -305,13 +306,13 @@ const PublicNav = ({ navData = [], searchTerm = '', user, viewMode, onLinkClick 
   );
 };
 
-// 链接表单组件 (已修改：新增 Icon 字段)
+// 链接表单组件 
 const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     url: initialData?.url || '',
     description: initialData?.description || '',
-    icon: initialData?.icon || '' // 新增 icon 字段
+    icon: initialData?.icon || '' 
   });
 
   const handleSubmit = (e) => {
@@ -349,7 +350,7 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
         value={formData.description}
         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
       />
-      {/* 新增 Icon 输入框 */}
+      {/* Icon 输入框 */}
       <input
         type="url"
         className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
@@ -377,7 +378,7 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
 
 
 // ====================================================================
-// AdminPanel (管理面板组件) - 保持不变
+// AdminPanel (管理面板组件) 
 // ====================================================================
 const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   const [newCategory, setNewCategory] = useState({ category: '', sort_order: 0 });
@@ -625,7 +626,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
 };
 
 // ====================================================================
-// UserPanel (用户面板组件) - 保持不变
+// UserPanel (用户面板组件) 
 // ====================================================================
 const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess }) => {
   const [newCategory, setNewCategory] = useState({ category: '', sort_order: 0 });
@@ -726,7 +727,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
       }
   };
 
-  // ========== 退出登录处理函数 - 修复手机端无法登出问题 ==========
+  // 退出登录处理函数 
   const handleLogout = async () => {
       if (confirm('确定要退出登录吗？')) {
           setLoading(true);
@@ -734,13 +735,11 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
               const { error } = await supabase.auth.signOut();
               
               if (error) {
-                  // 即使 Supabase 报错，也要尝试清除本地状态
                   console.error("Supabase 登出 API 报错:", error.message);
               }
               
-              // 关键修复：清除本地状态并触发 App 刷新
               onLogoutSuccess(); 
-              onClose(); // 关闭面板
+              onClose(); 
           } catch (e) {
               alert('退出登录失败: ' + e.message);
           } finally {
@@ -748,7 +747,6 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
           }
       }
   };
-  // ======================================
 
 
   return (
@@ -821,6 +819,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    {/* 用户面板中添加链接按钮 (保留) */}
                     <button
                       onClick={() => setAddingLinkTo(addingLinkTo === category.id ? null : category.id)}
                       className="px-3 py-1 bg-green-600 text-white rounded flex items-center gap-1 text-sm"
@@ -898,7 +897,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
             ))}
           </div>
           
-          {/* ========== 退出登录按钮 ========== */}
+          {/* 退出登录按钮 */}
           <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                   onClick={handleLogout}
@@ -909,7 +908,6 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
                   {loading ? '退出中...' : '退出登录'}
               </button>
           </div>
-          {/* ================================== */}
           
         </div>
       </div>
@@ -1181,10 +1179,7 @@ function App() {
     setSession(null);
     setUserNav([]);
     setViewMode('public');
-    // 强制重新加载公共数据，确保UI干净
     loadNavData(null); 
-    // 可以在此添加逻辑，强制刷新 WebView 或清理缓存（取决于 App 环境）
-    // 例如： if (window.myApp) window.myApp.clearSession();
   }, [loadNavData]);
 
 
@@ -1237,7 +1232,7 @@ function App() {
 
   // 3. 动作函数
 
-  // ** 用户/登录按钮 (人头) 点击事件 - 首页核心操作入口 **
+  // 用户/登录按钮 (人头) 点击事件
   const handleUserLoginClick = () => {
       if (user) {
           setShowUserPanel(true); // 已登录，进入用户面板
@@ -1246,18 +1241,17 @@ function App() {
       }
   };
   
-  // ** 管理/设置按钮 (齿轮) 点击事件 - 仅管理员入口 **
+  // 管理/设置按钮 (齿轮) 点击事件 - 仅管理员入口
   const handleAdminSettingsClick = () => {
       if (isAdmin) {
           setShowAdminPanel(true);
       } else {
-          // 非管理员点击齿轮按钮，可以提示权限不足或引导到用户登录
           alert('此入口仅供管理员使用，请使用下方人头图标登录/管理您的个人导航。');
       }
   };
 
 
-  // ** 模式切换按钮 (当前/我的导航) 点击事件 **
+  // 模式切换按钮 (当前/我的导航) 点击事件
   const handleViewModeToggle = () => {
     // 只有在登录状态下才能切换到 'user' 模式
     if (user) {
@@ -1268,21 +1262,6 @@ function App() {
     }
   };
   
-  // ** 添加链接按钮 (+) 点击事件 **
-  const handleAddLinkClick = () => {
-    if (viewMode === 'user' && user) {
-        // 用户模式下，跳转到用户面板进行添加
-        setShowUserPanel(true);
-    } else if (viewMode === 'public' && isAdmin) {
-        // 公共模式下，管理员跳转到管理面板进行添加
-        setShowAdminPanel(true);
-    } else if (viewMode === 'public' && !isAdmin) {
-        // 普通用户不能添加公共链接，提示登录以添加个人链接
-        setShowAuth(true); 
-    }
-  };
-
-
   const handleLinkClick = (link) => {
     setSelectedLink(link);
     setShowLinkAction(true);
@@ -1291,11 +1270,9 @@ function App() {
   const handleEditLink = (link) => {
       if (viewMode === 'public' && isAdmin) {
           setShowAdminPanel(true);
-          // 实际编辑操作在 AdminPanel 中寻找并处理
       } 
       else if (viewMode === 'user' && user) {
           setShowUserPanel(true);
-          // 实际编辑操作在 UserPanel 中寻找并处理
       }
   }
 
@@ -1346,18 +1323,39 @@ function App() {
     }
   };
 
+  // **更新后的免责声明**
   const handleShowDisclaimer = () => {
       setInfoContent({ 
           title: "免责声明", 
-          content: "本站提供的所有外部链接，旨在方便用户快速访问，其内容均由第三方网站提供。本站不对这些外部链接内容的准确性、完整性、合法性或可靠性承担任何责任。用户在访问这些外部链接时，应自行承担风险。任何通过本站链接所产生的法律责任和经济损失，均与本站无关。" 
+          content: `1. 内容准确性
+
+本网站（第一象限 极速导航网）所提供的所有链接信息均来源于互联网公开信息或用户提交。本站会尽力确保信息的准确性和时效性，但不对信息的完整性、准确性、时效性或可靠性作任何形式的明示或暗示的担保。
+2. 外部链接责任
+本站提供的所有外部网站链接（包括但不限于导航网站、资源链接等）仅为方便用户访问而设置。本站对任何链接到的第三方网站的内容、政策、产品或服务不承担任何法律责任。用户点击并访问外部链接时，即表示自行承担由此产生的一切风险。
+3. 法律法规遵守
+用户在使用本站服务时，须承诺遵守当地所有适用的法律法规。任何用户利用本站从事违反法律法规的行为，均与本站无关，本站不承担任何法律责任。
+4. 图标与版权声明
+本站网址图标有些因为网络原因、技术缺陷，可能导致图标显示不准确。如果涉及侵权，请联系作者删除。作者邮箱: ${ADMIN_EMAIL}
+使用本网站即表示您已阅读、理解并同意本声明的所有内容。`
       });
       setShowInfo(true);
   };
   
+  // **更新后的关于本站**
   const handleShowAbout = () => {
       setInfoContent({
-          title: "关于本站",
-          content: `极速导航网 (V${runningDays}.0) 是一个致力于提供极简、高效导航体验的个人项目。\n\n- 运行天数: ${runningDays} 天\n- 技术栈: React, Tailwind CSS, Supabase\n- 目标: 成为您的私人导航助手，实现一键直达，高效办公。\n\n感谢所有支持和使用本站的朋友！`
+          title: "关于第一象限 极速导航网",
+          content: `【站点功能】
+本站致力于提供一个**简洁、快速、纯粹**的网址导航服务。我们精心筛选了常用、高效和高质量的网站链接，并将它们按类别清晰展示，旨在成为您日常网络冲浪的起点站。
+
+【创设初衷：拒绝广告】
+在信息爆炸的时代，许多导航网站充斥着干扰性的广告和推广内容，严重影响了用户体验和访问速度。**第一象限** 创建本站的初衷正是为了提供一个**零广告、零干扰**的净土。我们承诺，本站将永久保持简洁干净，只专注于网址导航这一核心功能。
+
+【作者】
+由 第一象限 独立设计与开发。
+联系邮箱: ${ADMIN_EMAIL}
+
+- 技术栈: React, Tailwind CSS, Supabase` // 运行天数已移除到页脚
       });
       setShowInfo(true);
   };
@@ -1394,56 +1392,71 @@ function App() {
                     </div>
                 </div>
 
-                {/* 第二行：搜索框和选择器 */}
-                {/* **** 修改点 2: 限制搜索框宽度为 max-w-xl (更短) **** */}
+                {/* 第二行：搜索框和选择器 - 保持 max-w-xl 宽度并居中 */}
                 <div className="max-w-xl mx-auto"> 
                     <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-4">
                         
-                        {/* 模式选择器 */}
-                        {/* **** 修改点 3: 搜索框和选择器背景改为深灰色 bg-gray-700 **** */}
-                        <select
-                            value={searchMode}
-                            onChange={(e) => {
-                                setSearchMode(e.target.value);
-                                if (e.target.value !== 'internal') {
-                                    setSearchTerm(''); 
-                                }
-                            }}
-                            className="p-3 border border-gray-700 rounded-full bg-gray-700 text-white focus:ring-blue-500 focus:border-blue-500 appearance-none outline-none"
-                        >
-                            {searchEngines.map(engine => (
-                                <option key={engine.id} value={engine.id}>
-                                    {engine.name}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* 搜索输入框 */}
-                        <input
-                            id="searchInput"
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder={searchMode === 'internal' ? '搜索站内链接... (按 / 聚焦)' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
-                            className="flex-1 px-4 py-3 rounded-full border border-gray-700 bg-gray-700 text-white placeholder-gray-400 outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        {/* 搜索输入框及其图标容器 - 关键修改区域 */}
+                        <div className="relative flex-1"> 
+                            {/* 放大镜图标：颜色从 text-gray-400 修改为 text-blue-400 (亮蓝色) */}
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-400" />
+                            
+                            <input
+                                id="searchInput"
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder={searchMode === 'internal' ? '搜索站内链接... (按 / 聚焦)' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
+                                // 关键修改：添加 pl-10 (左侧填充) 为图标留出空间
+                                // 输入框使用 rounded-full (全圆角)
+                                className="w-full px-4 py-3 pl-10 rounded-full border border-gray-700 bg-gray-700 text-white placeholder-gray-400 outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
                         
                         {/* 提交按钮（对站外搜索有效） */}
                         {searchMode !== 'internal' && (
                             <button 
                                 type="submit" 
-                                className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 flex items-center justify-center flex-shrink-0"
+                                // 按钮使用 rounded-full (全圆角)
+                                // 外部搜索图标颜色为 text-cyan-400 (亮蓝色)
+                                className="p-3 bg-blue-600 text-cyan-400 rounded-full hover:bg-blue-700 flex items-center justify-center flex-shrink-0"
                             >
                                 <Search className="w-5 h-5" />
                             </button>
                         )}
                     </form>
+                    
+                    {/* 第三行：搜索模式按钮组 - 水平排列在搜索框下方 */}
+                    <div className="flex justify-center gap-3 mt-3">
+                        {searchEngines.map(engine => (
+                            <button
+                                key={engine.id}
+                                type="button" 
+                                onClick={() => {
+                                    setSearchMode(engine.id);
+                                    if (engine.id !== 'internal' && searchTerm) { 
+                                        setSearchTerm(''); 
+                                    }
+                                }}
+                                className={`
+                                    px-4 py-2 text-sm rounded-full font-medium transition-colors 
+                                    ${
+                                        searchMode === engine.id
+                                            ? 'bg-blue-600 text-white shadow-md' 
+                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600' 
+                                    }
+                                `}
+                            >
+                                {engine.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </header>
 
         {/* ========================================================= */}
-        {/* 右下方悬浮按钮组 (Fixed Floating Buttons) - 调整顺序和图标 */}
+        {/* 右下方悬浮按钮组 - 移除添加链接按钮 (+) */}
         {/* ========================================================= */}
         <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3 z-50">
             
@@ -1466,31 +1479,18 @@ function App() {
                     title={viewMode === 'public' ? '切换到我的导航' : '切换到公共导航'}
                     className={`p-4 rounded-full text-white shadow-xl transition-all duration-300 transform hover:scale-105 ${
                         viewMode === 'public' 
-                            ? 'bg-purple-600 hover:bg-purple-700' // 切换到用户导航的颜色
-                            : 'bg-indigo-600 hover:bg-indigo-700' // 切换回公共导航的颜色
+                            ? 'bg-purple-600 hover:bg-purple-700' 
+                            : 'bg-indigo-600 hover:bg-indigo-700' 
                     }`}
                 >
                     {viewMode === 'public' 
-                        ? <LayoutGrid className="w-6 h-6" /> // 提示：切换到 **我的** 导航 (网格/User图标也行)
-                        : <Key className="w-6 h-6" /> // 提示：切换回 **公共** 导航
+                        ? <LayoutGrid className="w-6 h-6" /> 
+                        : <Key className="w-6 h-6" /> 
                     }
                 </button>
             )}
             
-            {/* 3. 添加链接按钮 (仅用户模式或管理员模式下公共可见) */}
-            {/* 这个按钮通常放在用户模式下才有意义，或者管理员模式下，因此放在这里 */}
-            {((user && viewMode === 'user') || (isAdmin && viewMode === 'public')) && (
-                <button
-                    onClick={handleAddLinkClick}
-                    title={`添加链接到 ${currentViewText}`}
-                    className="p-4 rounded-full bg-green-600 text-white shadow-xl hover:bg-green-700 transition-transform transform hover:scale-105"
-                >
-                    <Plus className="w-6 h-6" />
-                </button>
-            )}
-
-            {/* **** 修改点 1: 最底下的主入口改为 人头图标 **** */}
-            {/* 4. 用户/登录入口 (常驻显示) */}
+            {/* 3. 用户/登录入口 (常驻显示) */}
             <button
                 onClick={handleUserLoginClick}
                 title={user ? '我的账户/设置' : '登录/注册'}
@@ -1534,7 +1534,7 @@ function App() {
           setUserNav={setUserNav} 
           onSave={handleSaveUserNav} 
           onClose={() => setShowUserPanel(false)} 
-          onLogoutSuccess={handleLogoutSuccess} // 传递登出成功后的清理函数
+          onLogoutSuccess={handleLogoutSuccess} 
         />
       )}
       {showWelcome && (<WelcomeModal onClose={() => setShowWelcome(false)} />)}
@@ -1549,20 +1549,33 @@ function App() {
         />
       )}
       
-      {/* 页尾 */}
+      {/* 页尾 - 包含运行天数和更新后的图标 */}
       <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>&copy; {new Date().getFullYear()} 极速导航网. All rights reserved. | Powered by Supabase</p>
+          <p>
+            &copy; {new Date().getFullYear()} 极速导航网. All rights reserved. | Powered by Supabase
+            {/* **显示运行天数** */}
+            <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400">
+                运行: {runningDays} 天
+            </span>
+          </p>
           <div className="flex justify-center items-center mt-2">
-            {/* **修改：将页脚链接的默认颜色改为蓝色，使其更显眼** */}
+            {/* 关于本站按钮 */}
             <button onClick={handleShowAbout} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-2">关于本站</button>
             <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
+            
+            {/* 免责声明按钮 */}
             <button onClick={handleShowDisclaimer} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-2">免责声明</button>
             <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
             
-            {/* GitHub Icon */}
+            {/* **GitHub Icon** */}
             <a href="https://github.com" target="_blank" rel="noopener noreferrer" title="GitHub 仓库" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.8a4 4 0 0 0-.8-2.5c2.7-.4 5.5-1.4 5.5-6s-1.8-4-5.5-4a7.4 7.4 0 0 0-1.8.2.6.6 0 0 1-.3-.3c-.2-.5-.8-2.6-1-3.2-.3-1-.9-1-1.3-.8-.4 0-1 .2-1.3.8-.2.6-.8 2.7-1 3.2a.6.6 0 0 1-.3.3 7.4 7.4 0 0 0-1.8-.2c-3.7 0-5.5 2-5.5 6s2.8 5.6 5.5 6a4 4 0 0 0 .8 2.5V22"/></svg>
+                <Github className="w-5 h-5" /> 
+            </a>
+            
+            {/* **地球 Icon 按钮** */}
+            <a href="https://adcwwvux.eu-central-1.clawcloudrun.com" target="_blank" rel="noopener noreferrer" title="外部链接" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1">
+                <Globe className="w-5 h-5" />
             </a>
           </div>
         </div>
