@@ -1,23 +1,19 @@
-export async function onRequestPost(ctx) {
-  const { request } = ctx;
+// 替换你现有的图标组件
+const Favicon = ({ url }) => {
+  const domain = url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+  const firstLetter = domain.charAt(0).toUpperCase();
   
-  try {
-    const { url } = await request.json();
-    if (!url) return new Response(JSON.stringify({ error: "missing url" }), { status: 400 });
-
-    const domain = new URL(url).hostname.replace(/^www\./, '');
-    
-    // 国内可用的替代服务（按优先级尝试）
-    const services = [
-      `https://api.faviconkit.com/${domain}/144`,  // 专业API
-      `https://favicon.yandex.net/favicon/${domain}`, // Yandex
-      `https://www.google.com/s2/favicons?domain=${domain}`, // Google（备用）
-      'https://favicon.cc/avatar.png' // 最终回退
-    ];
-
-    return Response.json({ faviconUrl: services[0] });
-    
-  } catch (error) {
-    return Response.json({ faviconUrl: "https://favicon.cc/avatar.png" });
-  }
-}
+  return (
+     {
+        e.target.src = `data:image/svg+xml,${encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+            <rect width="32" height="32" fill="#337ab7" rx="4"/>
+            <text x="16" y="20" text-anchor="middle" fill="white" font-family="Arial" font-size="14">${firstLetter}</text>
+          </svg>
+        `)}`;
+      }}
+      alt=""
+      style={{ width: 16, height: 16, borderRadius: 2 }}
+    />
+  );
+};
