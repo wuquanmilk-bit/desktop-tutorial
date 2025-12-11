@@ -1140,7 +1140,7 @@ function App() {
   const debouncedSearch = useDebounce(searchTerm, 300);
   const [searchMode, setSearchMode] = useState('internal'); // 'internal' | 'google' | 'baidu' | 'bing'
 
-  const appStartDate = '2022-06-01'; // 应用启动日期
+  const appStartDate = '2024-01-01'; // 应用启动日期
   const runningDays = useRunningDays(appStartDate);
   
   const isAdmin = user && user.email === ADMIN_EMAIL;
@@ -1573,8 +1573,18 @@ function App() {
                 <Github className="w-5 h-5" /> 
             </a>
             
+            {/* **地球 Icon 按钮 (已恢复正确链接)** */}
+            <a 
+                href="https://adcwwvux.eu-central-1.clawcloudrun.com/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                title="网站主页/其他链接" 
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1"
+            >
+                <Globe className="w-5 h-5" />
+            </a>
+            
             {/* **APK 下载按钮 (使用 Download 图标)** */}
-            {/* 注意：该链接包含一个限时的 Supabase token，到期后需更新。 */}
             <a 
                 href="https://zuplqpojcjwbmmjpacqx.supabase.co/storage/v1/object/sign/apk-downloads/jisudaohang01.apk?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lYjY4NTU2ZS03N2ExLTRiZjItOWQ0Yi0xMGM5NGMyZWRmOTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcGstZG93bmxvYWRzL2ppc3VkYW9oYW5nMDEuYXBrIiwiaWF0IjoxNzY1NDIxNjMzLCJleHAiOjE3OTY5NTc2MzN9.cpsgRfgT6_PMFh0iisMRUC3xXCNUMwWILoZtnIQvNZU" 
                 target="_blank" 
