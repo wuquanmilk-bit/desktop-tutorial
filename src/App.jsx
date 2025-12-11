@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+// 修正：将 GitHub 更改为 Github，并导入 Globe, Download
 import { ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid, Github, Globe, Download } from 'lucide-react'; 
 import './index.css';
 
@@ -12,15 +13,15 @@ const ADMIN_EMAIL = '115382613@qq.com';
 // --------------------------------------------------------------------
 // **图标 Base64 编码区域**
 // --------------------------------------------------------------------
-const GITHUB_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTgiIGhlaWdodD0iOTgiIHZpZXdCb3g9IjAgMCA5OCA5OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQ4Ljg1NCAwQzIxLjgxOSAwIDAgMjIgMCA0OS4wMjJjMCAyMS42NTUgMTMuOTk0IDQwLjEwMSAzMy4zMDYgNDYuNTcgMi40MjcuNDkyIDMuMzE2LTEuMDYxIDMuMzE2LTIuMzYgMC0xLjE0MS0uMDgtNS4wNTItLjA4LTkuMTI3LTEzLjU5IDIuOTM0LTE2LjQyLTEzLjA4LTE2LjQyLTEzLjA4LTIuMzA2LTUuODI1LTUuNjMtNy4zODctNS42My03LjM4Ny00LjU1Mi0zLjExNS4zNDQtMy4xMTUuMzQ0LTMuMTE1IDQuOTc1LjM0NCA3LjU2NiA1LjExIDcuNTY2IDUuMTEwIDQuNjEyIDcuOTI3IDMuODc3IDEwLjIzIDMuODc3IDEwLjIzIDIuNzkyIDQuODc0IDEwLjE1IDMuNDI4IDEyLjYxIDIuNjEuMzgtMi4yMzYuODk1LTMuNDI3IDEuNjI3LTUuMzA1LTE0LjA4Ni0xLjU5OC0yOC44NTUtNy4wOC0yOC44NTUtMzEuNDYgMC02Ljg1IDIuNDM5LTEyLjQ3IDYuNTAzLTE2Ljg0LTIuNTctNi4xNjctMS4xMjItMTIuNjUgMS4xMjItMTIuNjUgNS43MDYgMCAxMi4wNDQgNS41MjMgMTIuNTYgNS44MjMgMy40OS0xLjE3IDcuMjk3LTEuNzUgMTEuMDctMS43NSAzLjc3MyAwIDcuNTguNTggMTEuMDcgMS43NS41MzctLjMgNS44NzItNS44MjMgMTIuNTYtNS44MjMgMi4yNDQgMCAzLjY5MiA2LjQ4MyAxLjEyMiAxMi42NSAzLjA2NCA0LjM3IDYuNTAzIDkuOTkgNi41MDMgMTYuODQgMCAyNC40MTItMTQuODU1IDI5LjQwMi0yOS4wMiAzMS40NjIuODk1Ljc3IDEuNjg3IDIuMjc3IDEuNjg3IDQuNjA3IDAgMy4zMjgtLjAzIDYuMDI4LS4wMyA2Ljg1IDAgMS4zMDMuODkgMi44NTIgMS42ODcgMy43MzVDODIuOTYgODkuMDIzIDk2IDcwLjY3NyA5NiA0OS4wMjIgOTYgMjIgNzQuMTgxIDAgNDguODU0IDB6IiBmaWxsPSIjMTgxNzE3Ii8+Cjwvc3ZnPgo=';
-
-const SUPABASE_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNNTI1LjUzMiA2OThWNjI2LjYyOUwzNTIuODA2IDU0MS42MjlWNDQwLjU0M0w1MjUuNTMyIDUzNC43NTVWNDczLjM3NEwyNjUuMzA2IDM0MC4yMjlWNTQxLjYyOUwwIDYyNi42MjlWMzQwLjIyOUwyNjUuMzA2IDIwNy4wODRINTI1LjUzMkw3ODUuNzU4IDM0MC4yMjlWNTQxLjYyOUw1MjUuNTMyIDY5OFoiIGZpbGw9IiMzRUM3RjYiLz4KPHBhdGggZD0iTTc4NS43NTggNzQ2Ljg1N1Y2ODUuNDg2TDUyNS41MzIgODE4LjYzMVY2MTcuMjMxTDc4NS43NTggNzQ2Ljg1N1oiIGZpbGw9IiMzRUM3RjYiLz4KPC9zdmc+Cg==';
-
-const VERCEL_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNNTc2IDcwNEg5NDRMMTkyIDMyMEg1MTJMNzA0IDUxMkw1NzYgNzA0WiIgZmlsbD0iIzAwMDAwMCIvPgo8L3N2Zz4K';
-
-const FIGMA_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDIwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xMDAgMTUwQzEwMCAxMzQuMzEgMTEyLjMxIDEyMiAxMjggMTIyQzE0My42OSAxMjIgMTU2IDEzNC4zMSAxNTYgMTUwQzE1NiAxNjUuNjkgMTQzLjY5IDE3OCAxMjggMTc4QzExMi4zMSAxNzggMTAwIDE2NS42OSAxMDAgMTUwWiIgZmlsbD0iIzFBCDU0QiIvPgo8cGF0aCBkPSJNNjIgMjIyQzYyIDIwNi4zMSA3NC4zMSAxOTQgOTAgMTk0SDEwMFYyMjJDMTAwIDIzNy42OSA4Ny42OSAyNTAgNzIgMjUwQzU2LjMxIDI1MCA0NCAyMzcuNjkgNDQgMjIyQzQ0IDIwNi4zMSA1Ni4zMSAxOTQgNzIgMTk0Qzc0LjMxIDE5NCA3Ni41OCAxOTQuMjMgNzguNzggMTk0LjY3Qzc4LjI5IDE5Ni4wOSA3OCAxOTcuNTkgNzggMTk5LjEyQzc4IDIxNS4zMSA5MC4zMSAyMjcuNSAxMDYuNSAyMjcuNUMxMDguMDIgMjI3LjUgMTA5LjUzIDIyNy4yMiAxMTAuOTUgMjI2LjczQzExMC40IDIyOC45MiAxMTAuMTcgMjMxLjE5IDExMC4xNyAyMzMuNDdDMTEwLjE3IDI0OS42NiAxMjIuNDggMjYxLjgzIDEzOC42NyAyNjEuODNDMTU0Ljg2IDI2MS44MyAxNjcuMTcgMjQ9LjY2IDE2Ny4xNyAyMzMuNDdDMTY3LjE3IDIzMS4xOSAxNjYuOTQgMjI4LjkyIDE2Ni4zOSAyMjYuNzNDMTY3LjgxIDIyNy4yMiAxNjkuMzIgMjI3LjUgMTcwLjgzIDIyNy41QzE4Ni4xOCAyMjcuNSAxOTguNSAyMTUuMTggMTk4LjUgMTk5LjgzQzE5OC41IDE4NC40OCAxODYuMTggMTcyLjE2IDE3MC44MyAxNzIuMTZDMTY5LjMyIDE3Mi4xNiAxNjcuODEgMTcyLjQ0IDE2Ni4zOSAxNzIuOTNDMTY2Ljk0IDE3MC43NCAxNjcuMTcgMTY4LjQ3IDE2Ny4xNyAxNjYuMTlDMTY3LjE3IDE1MCAxNTQuODYgMTM3LjgzIDEzOC42NyAxMzcuODNDMTIyLjQ4IDEzNy44MyAxMTAuMTcgMTUwIDExMC4xNyAxNjYuMTlDMTEwLjE3IDE2OC40NyAxMTAuNCAxNzAuNzQgMTEwLjk1IDE3Mi45M0MxMDkuNTMgMTcyLjQ0IDEwOC4wMiAxNzIuMTYgMTA2LjUgMTcyLjE2QzkwLjMxIDE3Mi4xNiA3OCAxODQuMzMgNzggMjAwLjUyQzc4IDIwMi4wNCA3OC4yOSAyMDMuNTQgNzguNzggMjA0Ljk2Qzc2LjU4IDIwNS40IDc0LjMxIDIwNS42MyA3MiAyMDUuNjNDNTYuMzEgMjA1LjYzIDQ0IDE5My41IDQ0IDE3Ny4zMUM0NCAxNjEuMTIgNTYuMzEgMTQ4Ljk1IDcyIDE0OC45NUM3NC4zMSAxNDguOTUgNzYuNTggMTQ5LjE4IDc4Ljc4IDE0OS42MkM3OC4yOSAxNTEuMDQgNzggMTUyLjU0IDc4IDE1NC4wNkM3OCAxNjkuNzUgOTAuMzEgMTgyIDEwNiAxODJIMTEwVjE1MEMxMTAgMTM0LjMxIDk3LjY5IDEyMiA4MiAxMjJDNjYuMzEgMTIyIDU0IDEzNC4zMSA1NCAxNTBDNTQgMTY1LjY5IDY2LjMxIDE3OCA4MiAxNzhDODMuNTIgMTc4IDg1LjAyIDE3Ny43MiA4Ni40NCAxNzcuMjNDODUuODkgMTc5LjQyIDg1LjY3IDE4MS42OSA4NS42NyAxODMuOTdDODUuNjcgMjAwLjE2IDk3Ljk4IDIxMi4zMyAxMTQuMTcgMjEyLjMzQzEzMC4zNiAyMTIuMzMgMTQyLjY3IDIwMC4xNiAxNDIuNjcgMTgzLjk3QzE0Mi42NyAxODEuNjkgMTQyLjQ0IDE3OS40MiAxNDEuODkgMTc3LjIzQzE0My4zMSAxNzcuNzIgMTQ0LjgyIDE3OCAxNDYuMzMgMTc4QzE2MS45OCAxNzggMTc0LjMzIDE2NS42NSAxNzQuMzMgMTUwQzE3NC4zMyAxMzQuMzUgMTYxLjk4IDEyMiAxNDYuMzMgMTIyQzEzMC42OCAxMjIgMTE4LjMzIDEzNC4zNSAxMTguMzMgMTUwVjE4MkgxMjJDMTM3LjY5IDE4MiAxNTAgMTY5LjY5IDE1MCAxNTRDMTUwIDEzOC4zMSAxMzcuNjkgMTI2IDEyMiAxMjZDMTA2LjMxIDEyNiA5NCAxMzguMzEgOTQgMTU0Qzk0IDE1NS41MiA5NC4yOCAxNTcuMDIgOTQuNzcgMTU4LjQ0QzkyLjU3IDE1OC44OCA5MC4zMSAxNTkuMTEgODggMTU5LjExQzcyLjMxIDE1OS4xMSA2MCAxNDYuOSA2MCAxMzEuMjFDNjAgMTE1LjUyIDcyLjMxIDEwMy4zMSA4OCAxMDMuMzFDOTAuMzEgMTAzLjMxIDkyLjU3IDEwMy41NCA5NC43NyAxMDMuOThDOTQuMjggMTA1LjQgOTQgMTA2LjkgOTQgMTA4LjQyQzk0IDEyNC4xMSA4MS42OSAxMzYuNDIgNjYgMTM2LjQyQzUwLjMxIDEzNi40MiAzOCAxMjQuMTEgMzggMTA4LjQyQzM4IDkyLjczIDUwLjMxIDgwLjQyIDY2IDgwLjQyQzc0LjMxIDgwLjQyIDgxLjg0IDg0LjA1IDg3LjA0IDg5Ljg1QzkzLjMxIDgzLjU4IDEwMS40MiA4MCAxMTAuMzMgODBDMTI1LjAyIDgwIDEzOC4wNiA4Ny4yNyAxNDUuODMgOTguMjJDMTUxLjY0IDkyLjAyIDE1OS4yNSA4OCAxNjcuNjcgODBDMTgyLjM2IDgwIDE5NS40IDg3LjI3IDIwMy4xNyA5OC4yMkMyMDguMzcgOTIuNDIgMjE1LjkgODguNzkgMjI0LjIxIDg4Ljc5QzIzOC45IDg4Ljc5IDI1MS45NCA5Ni4wNiAyNTkuNzEgMTA3LjAxQzI2NC45MSAxMDEuMjEgMjcyLjU0IDk3LjU4IDI4MC44NSA5Ny41OEMyOTUuNTQgOTcuNTggMzA4LjU4IDEwNC44NSAzMTYuMzUgMTE1LjhDMzIxLjU1IDExMCAzMjkuMDggMTA2LjM3IDMzNy4zOSAxMDYuMzdDMzUyLjA4IDEwNi4zNyAzNjUuMTIgMTEzLjY0IDM3Mi44OSAxMjQuNTlDMzc4LjA3IDExOC44MSAzODUuNjggMTE1LjE5IDM5NC4wNyAxMTUuMTlDNDA4Ljc2IDExNS4xOSA0MjEuOCAxMjIuNDYgNDI5LjU3IDEzMy40MUM0MzQuNzcgMTI3LjYxIDQ0Mi4zIDEyMy45OCA0NTAuNjEgMTIzLjk4QzQ2NS4zIDEyMy45OCA0NzguMzQgMTMxLjI1IDQ4Ni4xMSAxNDIuMkM0OTEuMzEgMTM2LjQgNDk4Ljk0IDEzMi43NyA1MDcuMjUgMTMyLjc3QzUyMS45NCAxMzIuNzcgNTM0Ljk4IDE0MC4wNCA1NDIuNzUgMTUwLjk5QzU0Ny45NSAxNDUuMTkgNTU1LjU4IDE0MS41NiA1NjMuODkgMTQxLjU2QzU3OC41OCAxNDEuNTYgNTkxLjYyIDE0OC44MyA1OTkuMzkgMTU5Ljc4QzYwNC41OSAxNTMuOTggNjEyLjIyIDE1MC4zNSA2MjAuNTMgMTUwLjk1QzYzNS4yMiAxNTAuMzUgNjQ4LjI2IDE1Ny42MiA2NTYuMDMgMTY4LjU3QzY2MS4yMyAxNjIuNzcgNjY4Ljg2IDE1OS4xNCA2NzcuMTcgMTU5LjE0QzY5MS44NiAxNTkuMTQgNzA0LjkgMTY2LjQxIDcxMi42NyAxNzcuMzZDNzE3Ljg3IDE3MS41NiA3MjUuNSAxNjcuOTMgNzMzLjgxIDE2Ny45M0M3NDguNSAxNjcuOTMgNzYxLjU0IDE3NS4yIDc2OS4zMSAxODYuMTVDNzc0LjUxIDE4MC4zNSA3ODIuMTQgMTc2LjcyIDc5MC40NSAxNzYuNzJDODA1LjE0IDE3Ni43MiA4MTguMTggMTgzLjk5IDgyNS45NSAxOTQuOTRDODMxLjE1IDE4OS4xNCA4MzguNzggMTg1LjUxIDg0Ny4wOSAxODUuNTFDODYxLjc4IDE4NS41MSA4NzQuODIgMTkyLjc4IDg4Mi41OSAyMDMuNzNDODg3Ljc5IDE5Ny45MyA4OTUuNDIgMTk0LjMgOTAzLjczIDE5NC4zQzkxOC40MiAxOTQuMyA5MzEuNDYgMjAxLjU3IDkzOS4yMyAyMTIuNTJDOTQ0LjQzIDIwNi43MiA5NTIuMDYgMjAzLjA5IDk2MC4zNyAyMDMuMDlDOTc1LjA2IDIwMy4wOSA5ODguMSAyMTAuMzYgOTk1Ljg3IDIyMS4zMUMxMDAxLjA3IDIxNS41MSAxMDA4LjcgMjExLjg4IDEwMTcuMDEgMjExLjg4QzEwMzEuNyAyMTEuODggMTA0NC43NCAyMTkuMTUgMTA1Mi41MSAyMzAuMUwxMDUyLjUxIDMwMEgxMDAwVjIyMkMxMDAwIDIwNi4zMSAxMDEyLjMxIDE5NCAxMDI4IDE5NEMxMDQzLjY5IDE5NCAxMDU2IDIwNi4zMSAxMDU2IDIyMkMxMDU2IDIzNy42OSAxMDQzLjY5IDI1MCAxMDI4IDI1MEMxMDEyLjMxIDI1MCAxMDAwIDIzNy42OSAxMDAwIDIyMlYyNTBIMTAwMFYyNzJIMTAwMFYyOTRIMTAwMFYzMDBIMTAwMFoiIGZpbGw9IiNGMjRCNkMiLz4KPC9zdmc+Cg==';
-
-const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iODAiIGZpbGw9IiMwMDAwMDAiLz4KPHBhdGggZD0iTTEwMCAxMzMuMzMzQzExOC40MDkgMTMzLjMzMyAxMzMuMzMzIDExOC40MDkgMTMzLjMzMyAxMDAuMDAxQzEzMy4zMzMgODEuNTkyIDExOC40MDkgNjYuNjY3IDEwMCA2Ni42NjdDODEuNTkxIDY2LjY2NyA2Ni42NjcgODEuNTkyIDY2LjY2NyAxMDAuMDAxQzY2LjY2NyAxMTguNDA5IDgxLjU5MSAxMzMuMzMzIDEwMCAxMzMuMzMzWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==';
+// **重要说明：请将以下占位符替换为您实际的 SVG 或 PNG Base64 字符串。**
+// 
+// 转换方法：将图标文件上传到在线 Base64 转换工具，将结果粘贴到下方。
+// 格式应为：'data:image/svg+xml;base64,...' 或 'data:image/png;base64,...'
+const GITHUB_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxNzUiIGhlaWdodD0iMTc1IiB2aWV3Qm94PSIwLDAsMTc1LDE3NSI+PGcgaWQ9InN2Z18zIj48cGF0aCBmaWxsPSIjMjAyNjI3IiBkPSJNMzguNjY2NywzOC42NjY3aDEzNy42NjY2VjEzMi4zMzMzaC0xMzcuNjY2NlYzOC42NjY3WiIgY2xhc3M9ImdhdGUtaWNvbiByZWd1bGFyIi8+PC9nPg8vc3ZnPg=='; // **请替换为真实的 GitHub Base64**
+const SUPABASE_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMjU2IDBDMTE0LjYgMCAwIDExNC42IDAgMjU2czExNC42IDI1NiAyNTYgMjU2IDI1Ni0xMTQuNiAyNTYtMjU2UzM5Ny40IDAgMjU2IDB6TTI1NiA1MS4yYy01Ny4yIDAtMTA1LjcgMjcuMi0xMzUuOCAzOC4xTDM1My4zIDM2Ni41Yy0xMS41LTEwLjEtMjUuNi0xNy40LTQxLjUtMjEuNCAwLTIwLjYtMTYuOS0zNy41LTM3LjUtMzcuNS0yMC42IDAtMzcuNSAxNi45LTM3LjUgMzcuNSAwIDIwLjYgMTYuOSA0MS4yIDQxLjUgMzcuNUw4MC43IDQyMy41Yy01LjYgMy4xLTEwLjQgNy4zLTE0LjkgMTIuNi02LjQgNy44LTEwLjEgMTcuMS0xMC4xIDI4LjIgMCAxNC45IDcuMyAyOC41IDE5LjMgMzcuNSAyLjQgMTkuMyAxOS4zIDM0LjMgMzkuNSAzMS42IDExLjItMS40IDIyLjItNC42IDMyLjYtOS42bDEzNi43LTE1MS44YzIxLjQgNS4xIDQxLjIgMTkuMyA1MS4yIDM5LjYgMjcuMiA1Ny4yLTM2LjYgMTA1LjctOTMuOCAxMzUuOC0zMC43IDMxLjQtNjkuOSAyOS41LTk5LjcgMzcuNWwtODQuMy04NC4zYy0zLTIuNC01LjYtNS42LTUuNi05LjMgMy44LTE4LjQgMTkuMy0zMS40IDM3LjUtMzEuNCAyMy4zIDAgMzcuNSA5LjggMzkuNSA5LjggNDcuOS01NC42IDUxLjItMTI2LjYgOS44LTE2MS4yTDQyMy41IDUwMy43YzYuOCAzLjggMTMuNSAyLjQgMTcuMi0zLjUgMzYuNy00Mi42IDMyLjUtMTE1LjYtOS44LTE2NS41QzQyMy41IDEzNy4xIDMyMy43IDUyLjEgMjU2IDUxLjJ6IiBmaWxsPSIjMUMyMzJGOCIvPjwvc3ZnPg=='; // **请替换为真实的 Supabase Base64**
+const VERCEL_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTMwLjM4IDEuNTdMMTYuMTMgMjUuMjNMMS44OCA1LjgxYTIuNjkgMi42OSAwIDAgMSAxLjkzLTMuMTFsMjYuNzgtLjk5YTIuNjggMi42OCAwIDAgMSAuNjUgLjgyeiIvPjwvc3ZnPg=='; // **请替换为真实的 Vercel Base64**
+const FIGMA_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUuMDAwMDAwMDAwMDAwMDA0IiBoZWlnaHQ9IjM3LjQ5OTk5OTk5OTk5OTk5NSIgdmlld0JveD0iMCAwIDI1IDM3LjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjY2NjcgMzcuNUgyNS4wVjI1LjAwMDJDMjUuMDAwMiAzNC4yNzM4IDE4LjY3MjcgMzcuNSAxNi42NjY3IDM3LjVaTTI1LjAwMDEgMTIuNDk5OUgyNS4wMDEyVjI1LjAwMDJDMTguNjcyNyAyNS4wMDAzIDE4LjY3MTMgMjUuMDAwMSAxNi42NjY3IDI1LjAwMDJWMTEuNzA0OEwyNS4wMDEyIDExLjcxMjIgMjUuMDAwMSAxMi40OTk5WiIgZmlsbD0iIzAwQzE5RSIvPjxwYXRoIGQ9Ik0xNi42NjY3IDBIMjUuMDAwMVYxMi41MDAxSDE2LjY2NjdWMFoiIGZpbGw9IiNGRDBRQUYiLz48cGF0aCBkPSJNMCAwSDE2LjY2NjZWMTEuNzA0OEgwVjBaIiBmaWxsPSIjRjkyRjI0Ii8+PHBhdGggZD0iTTE2LjY2NjcgMTEuNzA0OEgwVjI1LjAwMDJIMS45MDE0N0MxLjkwMTQ3IDI1LjAwMDMgMTAuNjUxNCAyNS4wMDYxIDE2LjY2NjcgMjUuMDAwMlYxMS43MDQ4WiIgZmlsbD0iIzEwOTRGMyIvPjxwYXRoIGQ9Ik0xNi42NjY2IDI1LjAwMDJWMzcuNDk5OUgxLjkxNDYxQzEuOTE0NjEgMzQuMjk1IDcuNzI5OTIgMzQuMzM0MyAxNi42NjY2IDI1LjAwMDJaIiBmaWxsPSIjQUUzRTZCIi8+PC9zdmc+'; // **请替换为真实的 Figma Base64**
+const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmVyU2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuorgvMjAwMC9zdmciPgogPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4wNzMgMCAwIDEuMDczIC0zLjY2OSAtMy42NjkpIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCg1LjIzMjUgMCAwIDUuMjMyNSAtMjQwLjgxIC0yNDAuODEpIj4KICAgPHBhdGggZD0ibTQ4LjczNiA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTM3LjU3NyA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTI2LjQxOCA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICA8L2c+CiA8L2c+CiA8L3N2Zz4K'; // **请替换为真实的 Unsplash Base64**
 
 // 工具函数
 function useDebounce(value, delay = 200) {
@@ -32,30 +33,38 @@ function useDebounce(value, delay = 200) {
   return v;
 }
 
-// 辅助函数: 计算运行天数
+// 辅助函数: 计算运行天数 (保持不变)
 function useRunningDays(startDateString) {
   const [runningDays, setRunningDays] = useState(0);
 
   useEffect(() => {
     const startDate = new Date(startDateString);
     const today = new Date();
+    
+    // 计算时间差 (毫秒)
     const diffTime = Math.abs(today - startDate);
+    // 转换为天数
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    
     setRunningDays(diffDays);
   }, [startDateString]);
 
   return runningDays;
 }
 
-// 默认数据
+
+// 默认数据 (数据库加载失败时的回退) - 已硬编码 Base64
 const DEFAULT_PUBLIC_NAV = [
   {
     id: 1,
     category: '常用开发',
     sort_order: 1,
     links: [
+      // GitHub: 使用 Base64 硬编码
       { id: 'link-1', name: 'GitHub', url: 'https://github.com', description: '代码托管平台', icon: GITHUB_ICON_BASE64 },
+      // Supabase: 使用 Base64 硬编码 (注意：原代码中 Supabase 缺失 icon 字段，现已添加)
       { id: 'link-2', name: 'Supabase', url: 'https://supabase.com', description: '后端即服务', icon: SUPABASE_ICON_BASE64 },
+      // Vercel: 使用 Base64 硬编码
       { id: 'link-3', name: 'Vercel', url: 'https://vercel.com', description: '部署平台', icon: VERCEL_ICON_BASE64 }
     ]
   },
@@ -64,14 +73,16 @@ const DEFAULT_PUBLIC_NAV = [
     category: '设计资源',
     sort_order: 2,
     links: [
+      // Figma: 使用 Base64 硬编码
       { id: 'link-4', name: 'Figma', url: 'https://figma.com', description: '设计工具', icon: FIGMA_ICON_BASE64 },
+      // Unsplash: 使用 Base64 硬编码
       { id: 'link-5', name: 'Unsplash', url: 'https://unsplash.com', description: '免费图片', icon: UNSPLASH_ICON_BASE64 }
     ]
   }
 ];
 
 // ====================================================================
-// 核心数据同步函数
+// 核心数据同步函数 (保持不变)
 // ====================================================================
 
 async function fetchPublicNav() {
@@ -79,11 +90,13 @@ async function fetchPublicNav() {
     .from('nav_categories')
     .select('*')
     .order('sort_order', { ascending: true });
+
   if (catError) throw catError;
 
   const { data: links, error: linkError } = await supabase
     .from('nav_links')
     .select('*');
+
   if (linkError) throw linkError;
 
   return categories.map(cat => ({
@@ -91,7 +104,11 @@ async function fetchPublicNav() {
     links: links
       .filter(link => link.category_id === cat.id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-      .map(link => ({ ...link, id: `link-${link.id}`, category_id: cat.id })) 
+      .map(link => ({ 
+        ...link, 
+        id: `link-${link.id}`, // 将数据库ID转换为前端ID格式
+        category_id: cat.id
+      })) 
   }));
 }
 
@@ -101,12 +118,14 @@ async function fetchUserNav(userId) {
     .select('*')
     .eq('user_id', userId)
     .order('sort_order', { ascending: true });
+
   if (catError) throw catError;
 
   const { data: links, error: linkError } = await supabase
     .from('nav_user_links')
     .select('*')
     .eq('user_id', userId);
+
   if (linkError) throw linkError;
 
   return categories.map(cat => ({
@@ -114,7 +133,11 @@ async function fetchUserNav(userId) {
     links: links
       .filter(link => link.category_id === cat.id)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-      .map(link => ({ ...link, id: `link-${link.id}`, category_id: cat.id })) 
+      .map(link => ({ 
+        ...link, 
+        id: `link-${link.id}`, 
+        category_id: cat.id 
+      })) 
   }));
 }
 
@@ -141,10 +164,13 @@ async function savePublicNavToDB(navData) {
     categories_data: categoriesToSave,
     links_data: linksToSave
   });
+
   if (error) throw error;
 }
 
 async function saveUserNavToDB(userId, navData) {
+    
+    // 强制使用数组索引 (index) 作为 sort_order
     const categoriesToSave = navData.map((c, index) => ({ 
         id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
         category: c.category, 
@@ -170,42 +196,65 @@ async function saveUserNavToDB(userId, navData) {
         categories_data: categoriesToSave,
         links_data: linksToSave
     });
+
     if (error) throw error;
 }
 
 // ====================================================================
-// 核心组件 (LinkIcon 修改版, LinkCard, PublicNav, LinkForm)
+// 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
 // ====================================================================
 
-// LinkIcon - **纯 Base64/静态模式**
-// 如果有 link.icon 且能加载，则显示；否则显示文字图标。
+// 链接图标组件 (已优化，Base64 硬编码的图标会直接加载，外部网络失败后不再尝试 Favicon API)
 const LinkIcon = ({ link }) => {
-  const [imgError, setImgError] = useState(false);
-  const iconSource = link.icon; // 数据库或硬编码的 Base64 字符串
+  const [err, setErr] = useState(false);
+  
+  // 优先级 1: 硬编码或数据库指定的 icon URL (包括 Base64 字符串)
+  const userIconUrl = link.icon; 
+  
+  // 优先级 2: Favicon API (当 userIconUrl 为空时使用，但不再作为失败回退)
+  const domain = useMemo(() => {
+        try {
+            return new URL(link.url).hostname;
+        } catch (e) {
+            return '';
+        }
+    }, [link.url]);
 
-  // 1. 如果有图标数据且没有报错，显示图片
-  if (iconSource && !imgError) {
-    return (
-      <div className="w-10 h-10 rounded-lg border bg-gray-50 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
+    const faviconUrl = domain 
+        ? `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(link.url)}&size=32`
+        : null;
+
+  // 决定最终使用的 URL: 优先使用 userIconUrl，如果 userIconUrl 不存在，则使用 faviconUrl
+  const finalIconUrl = userIconUrl || faviconUrl;
+  
+  // 如果没有可尝试的 URL，或者图标已明确失败 (err=true)，则直接回退到文字/默认图标
+  if (!finalIconUrl || err) {
+       // 优先级 3: 默认文字图标 (回退)
+      return (
+          <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-lg font-bold text-gray-600 dark:text-gray-300 flex-shrink-0">
+              {link.name ? link.name.substring(0, 1).toUpperCase() : <ExternalLink className="w-5 h-5 text-blue-500" />}
+          </div>
+      );
+  }
+  
+  return (
+    <div className="w-10 h-10 rounded-lg border bg-gray-50 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
         <img 
-          src={iconSource} 
+          src={finalIconUrl} 
           alt={`${link.name} icon`} 
           className="w-6 h-6 object-contain" 
-          onError={() => setImgError(true)} // 如果 Base64 数据损坏，转为文字模式
+          onError={() => {
+            // **优化点**：一旦当前尝试的 URL 失败（无论是 userIconUrl 还是 faviconUrl），
+            // 立即设置 err=true，下次渲染直接走文字回退。
+            // 这样做可以避免在网络受限情况下尝试加载 Favicon API 导致的二次延迟或失败。
+            setErr(true); 
+          }}
         />
-      </div>
-    );
-  }
-
-  // 2. 回退模式：显示文字首字母
-  return (
-    <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-lg font-bold text-gray-600 dark:text-gray-300 flex-shrink-0">
-      {link.name ? link.name.substring(0, 1).toUpperCase() : <ExternalLink className="w-5 h-5 text-blue-500" />}
     </div>
   );
 };
 
-// 链接卡片
+// 链接卡片 (保持不变)
 const LinkCard = ({ link, onOpen }) => (
   <div 
     onClick={() => onOpen(link)} 
@@ -222,7 +271,7 @@ const LinkCard = ({ link, onOpen }) => (
   </div>
 );
 
-// 公共导航显示组件
+// 公共导航显示组件 (保持不变)
 const PublicNav = ({ navData = [], searchTerm = '', user, viewMode, onLinkClick }) => {
   const filtered = useMemo(() => {
     if (!searchTerm) return navData;
@@ -315,10 +364,11 @@ const LinkForm = ({ onSave, onCancel, initialData = null, mode = 'add' }) => {
         value={formData.description}
         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
       />
+      {/* Icon 输入框 */}
       <input
-        type="text"
+        type="url"
         className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
-        placeholder="Base64 字符串或图片 URL (留空则显示文字图标)"
+        placeholder="指定图标 URL 或 Base64 字符串 (可选，优先使用)"
         value={formData.icon}
         onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
       />
@@ -391,7 +441,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
       name: linkData.name,
       url: linkData.url,
       description: linkData.description || '',
-      icon: linkData.icon || null, 
+      icon: linkData.icon || null, // 接收 icon
       sort_order: 999,
     };
     
@@ -409,7 +459,9 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   const cancelEditLink = () => setEditingLink(null);
   const saveEditLink = (linkData) => {
     if (!editingLink) return;
+    
     const updatedLink = { ...linkData, id: editingLink.id }; 
+    
     setNavData(prev => 
       prev.map(c => 
         c.id === editingLink.categoryId
@@ -446,6 +498,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl my-8">
+        {/* 标题栏 - 添加了保存按钮 */}
         <div className="p-6 border-b flex justify-between items-center">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
             <Settings className="inline mr-2" /> 管理公共导航
@@ -465,6 +518,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
         </div>
 
         <div className="p-6 max-h-[70vh] overflow-y-auto">
+          {/* 新增分类区域 */}
           <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-6">
             <h4 className="font-semibold mb-3">新增分类</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -490,6 +544,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
             </div>
           </div>
 
+          {/* 分类列表 */}
           <div className="space-y-4">
             {sortedNavData.map(category => (
               <div key={category.id} className="border rounded-lg p-4 bg-white dark:bg-gray-800">
@@ -513,6 +568,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
                   </div>
                 </div>
 
+                {/* 编辑分类模态框 */}
                 {editingCategory && editingCategory.id === category.id && (
                     <div className="my-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded space-y-3">
                         <h4 className="font-bold">编辑分类：{editingCategory.category}</h4>
@@ -534,6 +590,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
                     </div>
                 )}
                 
+                {/* 添加链接表单 */}
                 {addingLinkTo === category.id && (
                   <LinkForm
                     onSave={(link) => handleAddLink(category.id, link)}
@@ -542,6 +599,7 @@ const AdminPanel = ({ navData = [], setNavData, onClose, onSave }) => {
                   />
                 )}
 
+                {/* 链接列表 */}
                 <div className="space-y-2 mt-4">
                   {(category.links || []).map(link => (
                     <div key={link.id}>
@@ -631,7 +689,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
       name: linkData.name,
       url: linkData.url,
       description: linkData.description || '',
-      icon: linkData.icon || null, 
+      icon: linkData.icon || null, // 接收 icon
       sort_order: 999,
     };
     
@@ -650,6 +708,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
   const saveEditLink = (linkData) => {
     if (!editingLink) return;
     const updatedLink = { ...linkData, id: editingLink.id }; 
+
     setUserNav(prev => 
       prev.map(c => 
         c.id === editingLink.categoryId
@@ -682,14 +741,17 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
       }
   };
 
+  // 退出登录处理函数 
   const handleLogout = async () => {
       if (confirm('确定要退出登录吗？')) {
           setLoading(true);
           try {
               const { error } = await supabase.auth.signOut();
+              
               if (error) {
                   console.error("Supabase 登出 API 报错:", error.message);
               }
+              
               onLogoutSuccess(); 
               onClose(); 
           } catch (e) {
@@ -700,9 +762,11 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
       }
   };
 
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl my-8">
+        {/* 标题 - 添加了保存按钮 */}
         <div className="p-6 border-b flex justify-between items-center pt-8"> 
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
             <User className="inline mr-2" /> 管理我的导航
@@ -722,6 +786,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
         </div>
 
         <div className="p-6 max-h-[70vh] overflow-y-auto">
+          {/* 用户信息 */}
           <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-6 border border-blue-200 dark:border-blue-800">
             <h4 className="font-semibold mb-1">当前用户：{user.email}</h4>
             <p className="text-sm text-blue-600 dark:text-blue-300">
@@ -729,6 +794,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
             </p>
           </div>
           
+          {/* 新增分类 */}
           <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-6">
             <h4 className="font-semibold mb-3">新增分类</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -754,9 +820,11 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
             </div>
           </div>
 
+          {/* 分类列表 (内容不变) */}
           <div className="space-y-4">
             {sortedUserNav.map(category => (
               <div key={category.id} className="border rounded-lg p-4 bg-white dark:bg-gray-800">
+                {/* 分类头部 */}
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <h4 className="font-semibold text-lg">{category.category}</h4>
@@ -765,6 +833,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    {/* 用户面板中添加链接按钮 (保留) */}
                     <button
                       onClick={() => setAddingLinkTo(addingLinkTo === category.id ? null : category.id)}
                       className="px-3 py-1 bg-green-600 text-white rounded flex items-center gap-1 text-sm"
@@ -776,6 +845,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
                   </div>
                 </div>
 
+                {/* 编辑分类模态框 */}
                 {editingCategory && editingCategory.id === category.id && (
                     <div className="my-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded space-y-3">
                         <h4 className="font-bold">编辑分类：{editingCategory.category}</h4>
@@ -797,6 +867,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
                     </div>
                 )}
                 
+                {/* 添加链接表单 */}
                 {addingLinkTo === category.id && (
                   <LinkForm
                     onSave={(link) => handleAddLink(category.id, link)}
@@ -805,6 +876,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
                   />
                 )}
 
+                {/* 链接列表 */}
                 <div className="space-y-2 mt-4">
                   {(category.links || []).map(link => (
                     <div key={link.id}>
@@ -839,6 +911,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
             ))}
           </div>
           
+          {/* 退出登录按钮 */}
           <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                   onClick={handleLogout}
@@ -857,7 +930,7 @@ const UserPanel = ({ user, userNav, setUserNav, onClose, onSave, onLogoutSuccess
 };
 
 
-// AuthModal, WelcomeModal, InfoModal, LinkActionModal
+// AuthModal, WelcomeModal, InfoModal, LinkActionModal (保持不变)
 const AuthModal = ({ onClose, onLogin }) => {
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
@@ -881,7 +954,7 @@ const AuthModal = ({ onClose, onLogin }) => {
             } else {
                 const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
-                onLogin(user); 
+                onLogin(user); // 登录成功
             }
         } catch (error) {
             console.error(error);
@@ -1005,6 +1078,7 @@ const InfoModal = ({ title, content, onClose }) => {
     );
 };
 
+// 链接操作模态框 (保持不变)
 const LinkActionModal = ({ link, user, onClose, onEdit, isUserNav }) => {
     const canEdit = (user && isUserNav) || (user && user.email === ADMIN_EMAIL && !isUserNav);
 
@@ -1016,6 +1090,7 @@ const LinkActionModal = ({ link, user, onClose, onEdit, isUserNav }) => {
                     <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{link.url}</p>
                 </div>
                 <div className="space-y-3">
+                    {/* 1. 打开链接 (主要操作) */}
                     <a 
                         href={link.url} 
                         target="_blank" 
@@ -1026,11 +1101,12 @@ const LinkActionModal = ({ link, user, onClose, onEdit, isUserNav }) => {
                         <ExternalLink className="w-5 h-5 mr-2" /> 立即访问
                     </a>
 
+                    {/* 2. 编辑操作 (如果可编辑) */}
                     {canEdit && (
                         <button
                             onClick={() => {
                                 onClose();
-                                onEdit(link); 
+                                onEdit(link); // 触发编辑
                             }}
                             className="flex items-center justify-center w-full py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
                         >
@@ -1038,6 +1114,7 @@ const LinkActionModal = ({ link, user, onClose, onEdit, isUserNav }) => {
                         </button>
                     )}
 
+                    {/* 3. 取消 */}
                     <button
                         onClick={onClose}
                         className="flex items-center justify-center w-full py-3 border rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -1059,9 +1136,10 @@ function App() {
   const [user, setUser] = useState(null);
   const [publicNav, setPublicNav] = useState(DEFAULT_PUBLIC_NAV);
   const [userNav, setUserNav] = useState([]);
-  const [viewMode, setViewMode] = useState('public'); 
+  const [viewMode, setViewMode] = useState('public'); // 'public' | 'user'
   const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
   
+  // 模态框和面板状态
   const [showAuth, setShowAuth] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -1071,11 +1149,12 @@ function App() {
   const [showLinkAction, setShowLinkAction] = useState(false); 
   const [selectedLink, setSelectedLink] = useState(null);
 
+  // 搜索状态
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const [searchMode, setSearchMode] = useState('internal'); 
+  const [searchMode, setSearchMode] = useState('internal'); // 'internal' | 'google' | 'baidu' | 'bing'
 
-  const appStartDate = '2024-01-01'; 
+  const appStartDate = '2024-01-01'; // 应用启动日期
   const runningDays = useRunningDays(appStartDate);
   
   const isAdmin = user && user.email === ADMIN_EMAIL;
@@ -1087,6 +1166,7 @@ function App() {
     { id: 'bing', name: 'Bing' },
   ], []);
 
+  // 1. 初始化和会话监听
   const loadNavData = useCallback(async (userId) => {
     try {
       const publicData = await fetchPublicNav();
@@ -1107,6 +1187,7 @@ function App() {
     }
   }, []);
 
+  // 登出成功后的清理函数 (解决手机端退出问题)
   const handleLogoutSuccess = useCallback(() => {
     setUser(null);
     setSession(null);
@@ -1117,10 +1198,12 @@ function App() {
 
 
   useEffect(() => {
+    // 监听主题变化
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e) => setIsDarkMode(e.matches);
     mediaQuery.addEventListener('change', handler);
 
+    // 监听 Supabase 会话
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -1142,11 +1225,12 @@ function App() {
           setViewMode('user');
           loadNavData(newUser.id);
         } else if (event === 'SIGNED_OUT') {
-          handleLogoutSuccess(); 
+          handleLogoutSuccess(); // 登出后调用清理
         }
       }
     );
 
+    // 检查是否首次访问
     const hasVisited = localStorage.getItem('hasVisited');
     if (!hasVisited) {
         setShowWelcome(true);
@@ -1159,14 +1243,19 @@ function App() {
     };
   }, [handleLogoutSuccess, loadNavData]);
 
+
+  // 3. 动作函数
+
+  // 用户/登录按钮 (人头) 点击事件
   const handleUserLoginClick = () => {
       if (user) {
-          setShowUserPanel(true); 
+          setShowUserPanel(true); // 已登录，进入用户面板
       } else {
-          setShowAuth(true); 
+          setShowAuth(true); // 未登录，进入登录/注册
       }
   };
   
+  // 管理/设置按钮 (齿轮) 点击事件 - 仅管理员入口
   const handleAdminSettingsClick = () => {
       if (isAdmin) {
           setShowAdminPanel(true);
@@ -1175,10 +1264,14 @@ function App() {
       }
   };
 
+
+  // 模式切换按钮 (当前/我的导航) 点击事件
   const handleViewModeToggle = () => {
+    // 只有在登录状态下才能切换到 'user' 模式
     if (user) {
         setViewMode(prev => prev === 'public' ? 'user' : 'public');
     } else {
+        // 如果未登录但点击了模式切换，提示登录
         setShowAuth(true);
     }
   };
@@ -1200,6 +1293,7 @@ function App() {
   const handleSavePublicNav = async () => {
       try {
           await savePublicNavToDB(publicNav);
+          // 重新加载以获取新的数据库ID
           await loadNavData(user?.id); 
           alert('公共导航保存成功！');
           setShowAdminPanel(false);
@@ -1212,6 +1306,7 @@ function App() {
       if (!user) return;
       try {
           await saveUserNavToDB(user.id, userNav);
+          // 重新加载以获取新的数据库ID
           await loadNavData(user.id); 
           alert('我的导航保存成功！');
           setShowUserPanel(false);
@@ -1242,18 +1337,17 @@ function App() {
     }
   };
 
+  // **更新后的免责声明**
   const handleShowDisclaimer = () => {
       setInfoContent({ 
           title: "免责声明", 
           content: `1. 内容准确性
-本网站（第一象限 极速导航网）所提供的所有链接信息均来源于互联网公开信息或用户提交。本站会尽力确保信息的准确性和时效性，但不对信息的完整性、准确性、时效性或可靠性作任何形式的明示或暗示的担保。
 
+本网站（第一象限 极速导航网）所提供的所有链接信息均来源于互联网公开信息或用户提交。本站会尽力确保信息的准确性和时效性，但不对信息的完整性、准确性、时效性或可靠性作任何形式的明示或暗示的担保。
 2. 外部链接责任
 本站提供的所有外部网站链接（包括但不限于导航网站、资源链接等）仅为方便用户访问而设置。本站对任何链接到的第三方网站的内容、政策、产品或服务不承担任何法律责任。用户点击并访问外部链接时，即表示自行承担由此产生的一切风险。
-
 3. 法律法规遵守
 用户在使用本站服务时，须承诺遵守当地所有适用的法律法规。任何用户利用本站从事违反法律法规的行为，均与本站无关，本站不承担任何法律责任。
-
 4. 图标与版权声明
 本站网址图标有些因为网络原因、技术缺陷，可能导致图标显示不准确。如果涉及侵权，请联系作者删除。作者邮箱: ${ADMIN_EMAIL}
 使用本网站即表示您已阅读、理解并同意本声明的所有内容。`
@@ -1261,6 +1355,7 @@ function App() {
       setShowInfo(true);
   };
   
+  // **更新后的关于本站**
   const handleShowAbout = () => {
       setInfoContent({
           title: "关于第一象限 极速导航网",
@@ -1274,20 +1369,29 @@ function App() {
 由 第一象限 独立设计与开发。
 联系邮箱: ${ADMIN_EMAIL}
 
-- 技术栈: React, Tailwind CSS, Supabase` 
+- 技术栈: React, Tailwind CSS, Supabase` // 运行天数已移除到页脚
       });
       setShowInfo(true);
   };
 
+
+  // 5. 渲染部分
+  
   const currentViewText = viewMode === 'public' ? '公共导航' : '我的导航';
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
+        
+        {/* 顶部固定 Header */}
         <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10 shadow-md">
             <div className="max-w-7xl mx-auto px-4 py-3">
+                
+                {/* 第一行：标题 + 模式切换（文本形式） */}
                 <div className="flex items-center w-full relative justify-center"> 
+                    {/* 标题 - 居中并改成紫蓝色 */}
                     <h1 
                         className="text-3xl font-bold cursor-pointer" 
+                        // 文字颜色改为紫蓝色 (#6A5ACD)
                         style={{ color: '#6A5ACD' }} 
                         onClick={() => {
                             if (viewMode !== 'public') setViewMode('public');
@@ -1295,27 +1399,40 @@ function App() {
                     >
                         极速导航网
                     </h1>
+                    
+                    {/* 当前视图模式文字提示 */}
                     <div className="absolute right-0 text-sm text-gray-500 dark:text-gray-400">
                         在: <span className="font-semibold text-blue-600 dark:text-blue-400">{currentViewText}</span>
                     </div>
                 </div>
 
+                {/* 第二行：搜索框和选择器 - 保持 max-w-xl 宽度并居中 */}
                 <div className="max-w-xl mx-auto"> 
                     <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-4">
+                        
+                        {/* 搜索输入框及其图标容器 - 关键修改区域 */}
                         <div className="relative flex-1"> 
+                            {/* 放大镜图标：颜色从 text-gray-400 修改为 text-blue-400 (亮蓝色) */}
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-400" />
+                            
                             <input
                                 id="searchInput"
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder={searchMode === 'internal' ? '请输入搜索内容' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
+                                // 关键修改：添加 pl-10 (左侧填充) 为图标留出空间
+                                // 输入框使用 rounded-full (全圆角)
                                 className="w-full px-4 py-3 pl-10 rounded-full border border-gray-700 bg-gray-700 text-white placeholder-gray-400 outline-none focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
+                        
+                        {/* 提交按钮（对站外搜索有效） */}
                         {searchMode !== 'internal' && (
                             <button 
                                 type="submit" 
+                                // 按钮使用 rounded-full (全圆角)
+                                // 外部搜索图标颜色为 text-cyan-400 (亮蓝色)
                                 className="p-3 bg-blue-600 text-cyan-400 rounded-full hover:bg-blue-700 flex items-center justify-center flex-shrink-0"
                             >
                                 <Search className="w-5 h-5" />
@@ -1323,6 +1440,7 @@ function App() {
                         )}
                     </form>
                     
+                    {/* 第三行：搜索模式按钮组 - 水平排列在搜索框下方 */}
                     <div className="flex justify-center gap-3 mt-3">
                         {searchEngines.map(engine => (
                             <button
@@ -1351,17 +1469,24 @@ function App() {
             </div>
         </header>
 
+        {/* ========================================================= */}
+        {/* 右下方悬浮按钮组 - 移除添加链接按钮 (+) */}
+        {/* ========================================================= */}
         <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3 z-50">
+            
+            {/* 1. 管理员/设置按钮 (仅管理员可见) */}
             {isAdmin && (
                  <button
                     onClick={handleAdminSettingsClick}
                     title="管理公共导航 (管理员)"
                     className="p-4 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 transition-transform transform hover:scale-105"
                 >
+                    {/* 齿轮图标作为管理员专用入口 */}
                     <Settings className="w-6 h-6" /> 
                 </button>
             )}
             
+            {/* 2. 模式切换按钮 (仅登录用户可见) */}
             {user && (
                 <button
                     onClick={handleViewModeToggle}
@@ -1379,16 +1504,22 @@ function App() {
                 </button>
             )}
             
+            {/* 3. 用户/登录入口 (常驻显示) */}
             <button
                 onClick={handleUserLoginClick}
                 title={user ? '我的账户/设置' : '登录/注册'}
                 className="p-4 rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 transition-transform transform hover:scale-105"
             >
+                {/* 人头图标作为最主要的设置/登录入口 */}
                 <User className="w-6 h-6" /> 
             </button>
+            
         </div>
+        {/* ========================================================= */}
 
+        {/* 内容区，需要为固定头部留出空间 */}
         <main className="max-w-7xl mx-auto pt-40 px-4 pb-12"> 
+
         {searchMode === 'internal' && (
           <PublicNav 
             navData={user && viewMode === 'user' ? userNav : publicNav} 
@@ -1400,6 +1531,7 @@ function App() {
         )}
       </main>
 
+      {/* 模态框 */}
       {showAuth && (<AuthModal onClose={() => setShowAuth(false)} onLogin={(u) => { setUser(u); setShowAuth(false); }}/>)}
       {showAdminPanel && isAdmin && (
         <AdminPanel 
@@ -1431,25 +1563,31 @@ function App() {
         />
       )}
       
+      {/* 页尾 - 包含运行天数和 APK 下载按钮 */}
       <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>
             &copy; {new Date().getFullYear()} 极速导航网. All rights reserved. | Powered by Supabase
+            {/* **显示运行天数** */}
             <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400">
                 运行: {runningDays} 天
             </span>
           </p>
           <div className="flex justify-center items-center mt-2">
+            {/* 关于本站按钮 */}
             <button onClick={handleShowAbout} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-2">关于本站</button>
             <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
             
+            {/* 免责声明按钮 */}
             <button onClick={handleShowDisclaimer} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-2">免责声明</button>
             <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
             
+            {/* **GitHub Icon** */}
             <a href="https://github.com" target="_blank" rel="noopener noreferrer" title="GitHub 仓库" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1">
                 <Github className="w-5 h-5" /> 
             </a>
             
+            {/* **地球 Icon 按钮 (已恢复正确链接)** */}
             <a 
                 href="https://adcwwvux.eu-central-1.clawcloudrun.com/" 
                 target="_blank" 
@@ -1460,6 +1598,7 @@ function App() {
                 <Globe className="w-5 h-5" />
             </a>
             
+            {/* **APK 下载按钮 (使用 Download 图标)** */}
             <a 
                 href="https://zuplqpojcjwbmmjpacqx.supabase.co/storage/v1/object/sign/apk-downloads/jisudaohang.apk?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lYjY4NTU2ZS03N2ExLTRiZjItOWQ0Yi0xMGM5NGMyZWRmOTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcGstZG93bmxvYWRzL2ppc3VkYW9oYW5nLmFwayIsImlhdCI6MTc2NTQyNzQ4MCwiZXhwIjoxNzk2OTYzNDgwfQ.jXJKv6R2qhpyEgX7LIo-dvh--Ng2y9Gv8AUr_tAHV7w" 
                 target="_blank" 
