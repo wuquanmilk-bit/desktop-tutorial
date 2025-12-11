@@ -1390,7 +1390,7 @@ function App() {
                     
                     {/* 当前视图模式文字提示 */}
                     <div className="absolute right-0 text-sm text-gray-500 dark:text-gray-400">
-                        当前视图: <span className="font-semibold text-blue-600 dark:text-blue-400">{currentViewText}</span>
+                        在: <span className="font-semibold text-blue-600 dark:text-blue-400">{currentViewText}</span>
                     </div>
                 </div>
 
