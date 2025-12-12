@@ -16,15 +16,15 @@ import './index.css';
 // ====================================================================
 const ADMIN_EMAIL = '115382613@qq.com';
 
-// --------------------------------------------------------------------
+// --------------------------------------------------------------------\
 // **图标 Base64 编码区域**
 // --------------------------------------------------------------------
 // **重要说明：请将以下占位符替换为您实际的 SVG 或 PNG Base64 字符串。**
-const GITHUB_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxNzUiIGhlaWdodD0iMTc1IiB2aWV3Qm94PSIwLDAsMTc1LDE3NSI+PGcgaWQ9InN2Z18zIj48cGF0aCBmaWxsPSIjMjAyNjI3IiBkPSJNMzguNjY2NywzOC42NjY3aDEzNy42NjY2VjEzMi4zMzMzaC0xMzcuNjY2NlYzOC42NjY3WiIgY2xhc3M9ImdhdGUtaWNvbiByZWd1bGFyIi8+PC9nPg8vc3ZnPg=='; 
-const SUPABASE_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMjU2IDBDMTE0LjYgMCAwIDExNC42IDAgMjU2czExNC42IDI1NiAyNTYgMjU2IDI1Ni0xMTQuNiAyNTYtMjU2UzM5Ny40IDAgMjU2IDB6TTI1NiA1MS4yYy01Ny4yIDAtMTA1LjcgMjcuMi0xMzUuOCAzOC4xTDM1My4zIDM2Ni41Yy0xMS41LTEwLjEtMjUuNi0xNy40LTQxLjUtMjEuNCAwLTIwLjYtMTYuOS0zNy41LTM3LjUtMzcuNS0yMC42IDAtMzcuNSAxNi45LTM3LjUgMzcuNSAwIDIwLjYgMTYuOSA0MS4yIDQxLjUgMzcuNUw4MC43IDQyMy41Yy01LjYgMy4xLTEwLjQgNy4zLTE0LjkgMTIuNi02LjQgNy44LTEwLjEgMTcuMS0xMC4xIDI4LjIgMCAxNC45IDcuMyAyOC41IDE5LjMgMzcuNSAyLjQgMTkuMyAxOS4zIDM0LjMgMzkuNSAzMS42IDExLjItMS40IDIyLjItNC42IDMyLjYtOS42bDEzNi43LTE1MS44YzIxLjQgNS4xIDQxLjIgMTkuMyA1MS4yIDM5LjYgMjcuMiA1Ny4yLTM2LjYgMTA1LjctOTMuOCAxMzUuOC0zMC43IDMxLjQtNjkuOSAyOS41LTk5LjcgMzcuNWwtODQuMy04NC4zYy0zLTIuNC01LjYtNS42LTUuNi05LjMgMy44LTE4LjQgMTkuMy0zMS40IDM3LjUtMzEuNCAyMy4zIDAgMzcuNSA5LjggMzkuNSA5LjggNDcuOS01NC42IDUxLjItMTI2LjYgOS44LTE2MS4yTDQyMy41IDUwMy43YzYuOCAzLjggMTMuNSAyLjQgMTcuMi0zLjUgMzYuNy00Mi42IDMyLjUtMTE1LjYtOS44LTE2NS41QzQyMy41IDEzNy4xIDMyMy43IDUyLjEgMjU2IDUxLjJ6IiBmaWxsPSIjMUMyMzJGOCIvPjwvc3ZnPg=='; 
+const GITHUB_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMuM3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxNzUiIGhlaWdodD0iMTc1IiB2aWV3Qm94PSIwLDAsMTc1LDE3NSI+PGcgaWQ9InN2Z18zIj48cGF0aCBmaWxsPSIjMjAyNjI3IiBkPSJNMzguNjY2NywzOC42NjY3aDEzNy42NjY2VjEzMi4zMzMzaC0xMzcuNjY2NlYzOC42NjY3WiIgY2xhc3M9ImdhdGUtaWNvbiByZWd1bGFyIi8+PC9nPg8vc3ZnPg=='; 
+const SUPABASE_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMjU2IDBDMTE0LjYgMCAwIDExNC42IDAgMjU2czExNC42IDI1NiAyNTYgMjU2IDI1Ni0xMTQuNiAyNTYtMjU2UzM5Ny40IDAgMjU2MDB6TTI1NiA1MS4yYy01Ny4yIDAtMTA1LjcgMjcuMi0xMzUuOCAzOC4xTDM1My4zIDM2Ni41Yy0xMS41LTEwLjEtMjUuNi0xNy40LTQxLjUtMjEuNCAwLTIwLjYtMTYuOS0zNy41LTM3LjUtMzcuNS0yMC42IDAtMzcuNSAxNi45LTM3LjUgMzcuNSAwIDIwLjYgMTYuOSA0MS4yIDQxLjUgMzcuNUw4MC43IDQyMy41Yy01LjYgMy4xLTEwLjQgNy4zLTE0LjkgMTIuNi02LjQgNy44LTEwLjEgMTcuMS0xMC4xIDI4LjIgMCAxNC45IDcuMyAyOC41IDE5LjMgMzcuNSAyLjQgMTkuMyAxOS4zIDM0LjMgMzkuNSAzMS42IDExLjItMS40IDIyLjItNC42IDMyLjYtOS42bDEzNi43LTE1MS44YzIxLjQgNS4xIDQxLjIgMTkuMyA1MS4yIDM5LjYgMjcuMiA1Ny4yLTM2LjYgMTA1LjctOTMuOCAxMzUuOC0zMC43IDMxLjQtNjkuOSAyOS41LTk5LjcgMzcuNWwtODQuMy04NC4zYy0zLTItNS42LTUuNi01LjYtOS4zIDMuOC0xOC40IDE5LjMtMzEuNCAzNy41LTMxLjQgMjMuMyAwIDM3LjUgOS44IDM5LjUgOS44IDQ3LjktNTQuNiA1MS4yLTEyNi42IDkuOC0xNjEuMkw0MjMuNSAzMDMuN2M2LjggMy44IDEzLjUgMi40IDE3LjItMy41IDM2LjctNDIuNiAzMi41LTExNS42LTkuOC0xNjUuNUNEMzI3LjMgMTM3LjEgMzIzLjcgNTIuMSAyNTYgNTEuMnpNIiBmaWxsPSIjMUMyMzJGOCIvPjwvc3ZnPg=='; 
 const VERCEL_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTMwLjM4IDEuNTdMMTYuMTMgMjUuMjNMMS44OCA1LjgxYTIuNjkgMi42OSAwIDAgMSAxLjkzLTMuMTFsMjYuNzgtLjk5YTIuNjggMi42OCAwIDAgMSAuNjUgLjgyeiIvPjwvc3ZnPg=='; 
-const FIGMA_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUuMDAwMDAwMDAwMDAwMDA0IiBoZWlnaHQ9IjM3LjQ5OTk5OTk5OTk5OTk5NSIgdmlld0JveD0iMCAwIDI1IDM3LjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjY2NjcgMzcuNUgyNS4wVjI1LjAwMDJDMjUuMDAwMiAzNC4yNzM4IDE4LjY3MjcgMzcuNSAxNi42NjY3IDM3LjVaTTI1LjAwMDEgMTIuNDk5OUgyNS4wMDEyVjI1LjAwMDJDMTguNjcyNyAyNS4wMDAzIDE4LjY3MTMgMjUuMDAwMSAxNi42NjY3IDI1LjAwMDJWMTEuNzA0OEwyNS4wMDEyIDExLjcxMjIgMjUuMDAwMSAxMi40OTk5WiIgZmlsbD0iIzAwQzE5RSIvPjxwYXRoIGQ9Ik0xNi42NjY3IDBIMjUuMDAwMVYxMi41MDAxSDE2LjY2NjdWMFoiIGZpbGw9IiNGRDBRQUYiLz48cGF0aCBkPSJNMCAwSDE2LjY2NjZWMTEuNzA0OEgwVjBaIiBmaWxsPSIjRjkyRjI0Ii8+PHBhdGggZD0iTTE2LjY2NjcgMTEuNzA0OEgwVjI1LjAwMDJIMS45MDE0N0MxLjkwMTQ3IDI1LjAwMDMgMTAuNjUxNCAyNS4wMDYxIDE2LjY2NjcgMjUuMDAwMlYxMS43MDQ4WiIgZmlsbD0iIzEwOTRGMyIvPjxwYXRoIGQ9Ik0xNi42NjY2IDI1LjAwMDJWMzcuNDk5OUgxLjkxNDYxQzEuOTE0NjEgMzQuMjk1IDcuNzI5OTIgMzQuMzM0MyAxNi42NjY2IDI1LjAwMDJaIiBmaWxsPSIjQUUzRTZCIi8+PC9zdmc+'; 
-const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmVyU2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuborgvMjAwMC9zdmciPgogPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4wNzMgMCAwIDEuMDczIC0zLjY2OSAtMy42NjkpIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCg1LjIzMjUgMCAwIDUuMjMyNSAtMjQwLjgxIC0yNDAuODEpIj4KICAgPHBhdGggZD0ibTQ4LjczNiA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTM3LjU3NyA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTI2LjQxOCA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICA8L2c+CiA8L2c+CiA8L3N2Zz4K'; 
+const FIGMA_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUuMDAwMDAwMDAwMDAwMDA0IiBoZWlnaHQ9IjM3LjQ5OTk5OTk5OTk5OTk5NSIgdmlld0JveD0iMCAwIDI1IDM3LjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjY2NjcgMzcuNUgyNS4wVjI1LjAwMDJDMjUuMDAwMiAzNC4yNzM4IDE4LjY3MjcgMzcuNSAxNi42NjY3IDM3LjVaTTI1LjAwMDEgMTIuNDk5OUgyNS4wMDEyVjI1LjAwMDJDMTguNjcyNyAyNS4wMDAzIDE4LjY3MTMgMjUuMDAwMSAxNi42NjY3IDI1LjAwMDJWMTEuNzA0OEwyNS4wMDEyIDExLjcxMjIgMjUuMDAwMSAxMi40OTk5WiIgZmlsbD0iIzAwQzE5RSIvPjxwYXRoIGQ9Ik0xNi42NjY3IDBIMjUuMDAwMVYxMi41MDAxSDE2LjY2NjdWMFoiIGZpbGw9IiNGRDBRQUYiLz48cGF0aCBkPSJNMCAwSDE2LjY2NjZWMTEuNzA0OEgwVjBaIiBmaWxsPSIjRjkyRjI0Ii8+PHBhdGsgZD0iTTE2LjY2NjcgMTEuNzA0OEgwVjI1LjAwMDJIMS45MDE0N0MxLjkwMTQ3IDI1LjAwMDMgMTAuNjUxNCAyNS4wMDYxIDE2LjY2NjcgMjUuMDAwMlYxMS43MDQ4WiIgZmlsbD0iIzEwOTRGMyIvPjxwYXRoIGQ9Ik0xNi42NjY2IDI1LjAwMDJWMzcuNDk5OUgxLjkxNDYxQzEuOTE0NjEgMzQuMjk1IDcuNzI5OTIgMzQuMzM0MyAxNi42NjY2IDI1LjAwMDJaIiBmaWxsPSIjQUUzRTZCIi8+PC9zdmc+'; 
+const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmVyU2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuMorgvMjAwMC9zdmciPgogPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4wNzMgMCAwIDEuMDczIC0zLjY2OSAtMy42NjkpIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCg1LjIzMjUgMCAwIDUuMjMyNSAtMjQwLjgxIC0yNDAuODEpIj4KICAgPHBhdGggZD0ibTQ4LjczNiA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTM3LjU3NyA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTI2LjQxOCA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICA8L2c+CiA8L2c+CiA8L2c+CiA8L3N2Zz4K'; 
 
 // 工具函数
 function useDebounce(value, delay = 200) {
@@ -201,165 +201,162 @@ async function saveUserNavToDB(userId, navData) {
 // =========================================================================
 
 // ===================================
-// 1. 详细图标映射 (从 App01 移植)
+// 1. 静态图标 URL 映射 (从 App01 数据中提取的精华)
+//    这是 App01 能显示彩色图标的核心原因，现在移植到 App02
 // ===================================
-const ICON_MAP = {
-    // --- 常用开发 & 基础设施 ---
-    'github': Github, 
-    'git': Github,
-    'cloudflare': Cloud, 
-    'supabase': Database, 
-    'db': Database,
-    'database': Database,
-    'aws': Server, 
-    'azure': Server, 
-    '阿里云': Server, 
-    '腾讯云': Server, 
-    '华为云': Server, 
-    'oracle cloud': Database,
-    'ibm cloud': Database,
-    'server': Server,
-    'network': Network,
-    'monitor': Monitor,
-
-    // --- AI & 大模型 ---
-    'chatgpt': Bot, 
-    'gemini': Wand, 
-    'deepseek': Bot, 
-    'bot': Bot,
-    'ai': Bot,
-    '阿里千问': Bot, 
-    '腾讯元宝': Bot, 
-    '豆包': Bot, 
-    '即梦': Wand, 
-    '通义万相': Wand,
-    'wand': Wand,
-    'writer': Wrench,
-
-    // --- 视频 & 娱乐 ---
-    '哔哩哔哩': Play, 
-    'youtube': Play, 
-    'play': Play,
-    '爱奇艺': Monitor, 
-    '在线音乐': Play, 
-    '视频下载': Monitor,
-    '星空音乐下载': Play, 
-    'camera': Camera,
-    'instagram': Camera, 
-    '快手': Camera, 
-    '抖音': Camera, 
-    'snapchat': Camera,
-
-    // --- 工具 & 网络检测 ---
-    'browserscan': Network, 
-    'ping0': Network, 
-    '真实地址生成器': Network, 
-    'itdog': Network, 
-    'ip地址查询': Network, 
-    '在线代理': Network,
-    '免费网络代理': Network,
-    '在线工具网': Wrench, 
-    'py混淆': Wrench, 
-    '二维码生成': Wrench, 
-    'argo tunnel json获取': Wrench, 
-    'base64转换': Wrench, 
-    '一键抠图': Wand, 
-    '网址缩短': Wrench,
-    'flexclip': Wand, 
-    'js混淆': Wrench, 
-    '文件格式转换': Wrench, 
-    '第一工具网': Wrench,
-    'php混淆加密': Wrench, 
-    'json工具': Wrench, 
-    'emoji 表情大全': Wrench,
-    'code': Code,
-
-    // --- 搜索 & 电商 ---
-    '谷歌': Search, 
-    '百度': Search, 
-    '必应': Search, 
-    'google': Search,
-    'baidu': Search,
-    'bing': Search,
-    '淘宝网': ShoppingCart, 
-    '京东商城': ShoppingCart,
-    'shopping': ShoppingCart,
-
-    // --- 账户 & 其他 ---
-    'time': Clock,
-    'mail': Mail,
-    'login': User,
-    'password': Lock
+const STATIC_URL_MAP = {
+    // --- 常用开发 ---
+    'github': 'https://github.com/fluidicon.png',
+    'cloudflare': 'https://www.cloudflare.com/favicon.ico',
+    'supabase': 'https://supabase.com/favicon.ico',
+    
+    // --- AI 大模型 ---
+    'chatgpt': 'https://chatgpt.com/favicon.ico',
+    'gemini': 'https://gemini.google.com/favicon.ico',
+    'deepseek': 'https://www.deepseek.com/favicon.ico',
+    '阿里千问': 'https://chat.qwen.ai/favicon.ico',
+    '腾讯元宝': 'https://yuanbao.tencent.com/favicon.ico',
+    '豆包': 'https://www.doubao.com/favicon.ico',
+    '即梦': 'https://jimeng.jianying.com/favicon.ico',
+    '通义万相': 'https://tongyi.aliyun.com/wan/favicon.ico',
+    
+    // --- 影视娱乐 ---
+    '哔哩哔哩': 'https://www.bilibili.com/favicon.ico',
+    'youtube': 'https://www.youtube.com/s/desktop/4f17f4b8/img/favicon_96x96.png',
+    '爱奇艺': 'https://www.iqiyi.com/favicon.ico',
+    'instagram': 'https://www.instagram.com/static/images/ico/favicon.ico/31604a141b77.ico',
+    '快手': 'https://www.kuaishou.com/favicon.ico',
+    '抖音': 'https://www.douyin.com/favicon.ico',
+    'snapchat': 'https://www.snapchat.com/favicon.ico',
+    
+    // --- IP与工具 ---
+    'browserscan': 'https://www.browserscan.net/favicon.ico',
+    'ping0': 'https://ping0.cc/favicon.ico',
+    'itdog': 'https://www.itdog.cn/favicon.ico',
+    '在线工具网': 'https://tool.lu/favicon.ico',
+    '二维码生成': 'https://cli.im/favicon.ico',
+    'base64转换': 'https://www.qqxiuzi.cn/favicon.ico',
+    '一键抠图': 'https://remove.photos/favicon.ico',
+    'flexclip': 'https://www.flexclip.com/favicon.ico',
+    'js混淆': 'https://obfuscator.io/favicon.ico',
+    '文件格式转换': 'https://convertio.co/favicon.ico',
+    '第一工具网': 'https://d1tools.com/favicon.ico',
+    'php混淆加密': 'https://www.toolnb.com/favicon.ico',
+    'json工具': 'https://www.json.cn/favicon.ico',
+    'emoji 表情大全': 'https://www.iamwawa.cn/favicon.ico',
+    '在线代理': 'https://www.proxyshare.com/favicon.ico',
+    '免费网络代理': 'https://www.lumiproxy.com/favicon.ico',
+    
+    // --- 云计算 & 搜索 ---
+    'aws': 'https://a0.awsstatic.com/main/images/site/touch-icon-180x180.png',
+    'azure': 'https://azure.microsoft.com/favicon.ico',
+    '阿里云': 'https://www.aliyun.com/favicon.ico',
+    '腾讯云': 'https://cloud.tencent.com/favicon.ico',
+    '华为云': 'https://www.huaweicloud.com/favicon.ico',
+    'oracle cloud': 'https://www.oracle.com/asset/ctx/design/images/favicon.ico',
+    'ibm cloud': 'https://www.ibm.com/favicon.ico',
+    '百度': 'https://www.baidu.com/favicon.ico',
+    '必应': 'https://www.bing.com/sa/simg/favicon-2x.ico',
+    '谷歌': 'https://icons.duckduckgo.com/ip3/google.com.ico',
+    '淘宝网': 'https://www.taobao.com/favicon.ico',
+    '京东商城': 'https://www.jd.com/favicon.ico'
 };
 
-// 工具函数：根据链接名称获取匹配的 Lucide 图标组件
+// ===================================
+// 2. Lucide 形状图标映射 (作为最后的兜底)
+// ===================================
+const ICON_MAP = {
+    'github': Github, 'git': Github, 'cloudflare': Cloud, 'supabase': Database, 'db': Database,
+    'database': Database, 'aws': Server, 'azure': Server, '阿里云': Server, '腾讯云': Server, 
+    '华为云': Server, 'oracle cloud': Database, 'ibm cloud': Database, 'server': Server,
+    'network': Network, 'monitor': Monitor, 'chatgpt': Bot, 'gemini': Wand, 'deepseek': Bot, 
+    'bot': Bot, 'ai': Bot, '阿里千问': Bot, '腾讯元宝': Bot, '豆包': Bot, '即梦': Wand, 
+    '通义万相': Wand, 'wand': Wand, 'writer': Wrench, '哔哩哔哩': Play, 'youtube': Play, 
+    'play': Play, '爱奇艺': Monitor, '在线音乐': Play, '视频下载': Monitor, '星空音乐下载': Play, 
+    'camera': Camera, 'instagram': Camera, '快手': Camera, '抖音': Camera, 'snapchat': Camera,
+    'browserscan': Network, 'ping0': Network, '真实地址生成器': Network, 'itdog': Network, 
+    'ip地址查询': Network, '在线代理': Network, '免费网络代理': Network, '在线工具网': Wrench, 
+    'py混淆': Wrench, '二维码生成': Wrench, 'argo tunnel json获取': Wrench, 'base64转换': Wrench, 
+    '一键抠图': Wand, '网址缩短': Wrench, 'flexclip': Wand, 'js混淆': Wrench, 
+    '文件格式转换': Wrench, '第一工具网': Wrench, 'php混淆加密': Wrench, 'json工具': Wrench, 
+    'emoji 表情大全': Wrench, 'code': Code, '谷歌': Search, '百度': Search, '必应': Search, 
+    'google': Search, 'baidu': Search, 'bing': Search, '淘宝网': ShoppingCart, 
+    '京东商城': ShoppingCart, 'shopping': ShoppingCart, 'time': Clock, 'mail': Mail, 
+    'login': User, 'password': Lock
+};
+
+// 辅助函数：标准化名称 (去空格、转小写)
+const normalizeName = (name) => name ? name.toLowerCase().replace(/\s/g, '') : '';
+
+// 辅助函数：获取静态 URL (模拟 App01 的数据)
+const getStaticUrl = (name) => {
+    const key = normalizeName(name);
+    // 1. 尝试直接匹配
+    if (STATIC_URL_MAP[key]) return STATIC_URL_MAP[key];
+    // 2. 尝试模糊匹配 (比如 "Github 官网" 匹配 "github")
+    for (const mapKey in STATIC_URL_MAP) {
+        if (key.includes(mapKey)) return STATIC_URL_MAP[mapKey];
+    }
+    return null;
+};
+
+// 辅助函数：获取 Lucide 图标组件
 const getLucideIcon = (name) => {
-    if (!name) return Globe; 
-    
-    // 1. 标准化名称：转小写，移除所有空格
-    const key = name.toLowerCase().replace(/\s/g, '');
-    
-    // 2. 尝试直接匹配
-    if (ICON_MAP[key]) {
-        return ICON_MAP[key];
-    }
-    
-    // 3. 尝试模糊匹配 (如果名称包含某个关键词)
+    const key = normalizeName(name);
+    if (!key) return Globe;
+    if (ICON_MAP[key]) return ICON_MAP[key];
     for (const mapKey in ICON_MAP) {
-        if (key.includes(mapKey)) {
-            return ICON_MAP[mapKey];
-        }
+        if (key.includes(mapKey)) return ICON_MAP[mapKey];
     }
-    
-    // 4. 最终回退
     return Globe; 
 };
 
 // ===================================
-// 2. LinkIcon 核心组件
+// 3. LinkIcon 核心组件 (最终逻辑)
 // ===================================
 
 /**
  * 负责显示链接图标的组件。
- * 优先级: link.icon (自定义/Base64) -> 外部 Favicon API (DuckDuckGo) -> Lucide 图标回退。
+ * 优先级: 数据库/用户图标 -> App01静态URL -> DuckDuckGo API -> Lucide 形状图标。
  */
 const LinkIcon = ({ link }) => {
     // 状态：用于跟踪图片加载是否发生错误
     const [hasError, setHasError] = useState(false);
 
-    // 效应：当链接或图标源改变时，重置错误状态
+    // 当链接信息改变时，重置错误状态，允许重新尝试加载图片
     useEffect(() => {
         setHasError(false);
-    }, [link.url, link.icon]);
+    }, [link.url, link.icon, link.name]);
 
-    // 确定图标 URL 的核心逻辑
+    // 计算图片 URL
     const imageUrl = useMemo(() => {
-        // 优先级 1: 如果 link.icon 字段有值，直接使用它
-        if (link.icon) {
-            return link.icon;
-        }
+        // 优先级 1: 数据库/用户填写的 icon 字段
+        if (link.icon) return link.icon;
 
-        // 优先级 2: 如果 link.icon 为空，使用外部 Favicon API
+        // 优先级 2: App01 的硬编码静态 URL (这是修复的关键！)
+        const staticUrl = getStaticUrl(link.name);
+        if (staticUrl) return staticUrl;
+
+        // 优先级 3: DuckDuckGo 自动获取
         try {
             const urlObj = new URL(link.url);
-            // DuckDuckGo 图标 API
             return `https://icons.duckduckgo.com/ip3/${urlObj.hostname}.ico`;
         } catch {
             return ''; 
         }
-    }, [link.icon, link.url]);
+    }, [link.icon, link.url, link.name]);
 
-    // 获取 Lucide 回退图标组件 (基于名称匹配)
+    // 获取 Lucide 回退图标 (作为最后的保底)
     const FallbackIconComponent = getLucideIcon(link.name); 
     
     return (
         <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
             {/* 检查条件：如果加载失败 (hasError) 或没有生成 URL (!imageUrl)，则显示回退图标 */}
             {hasError || !imageUrl ? (
-                // 优先级 3: 显示 Lucide 回退图标
+                // 优先级 4: 显示 Lucide 形状图标
                 <FallbackIconComponent className="w-6 h-6 text-blue-500 dark:text-blue-400"/>
             ) : (
-                // 优先级 1/2: 显示远程图片
+                // 优先级 1/2/3: 显示远程图片
                 <img 
                     src={imageUrl} 
                     alt={`${link.name} icon`} 
