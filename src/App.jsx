@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 
-// 1. 【修改】引入 Heart 图标
+// 确保导入了所有新旧图标
 import { 
     ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid, 
     Github, Globe, Download, Cloud, Database, Bot, Play, Camera, Network, Server, ShoppingCart, Wand, Monitor, 
@@ -24,7 +24,7 @@ const GITHUB_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIH
 const SUPABASE_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMjU2IDBDMTE0LjYgMCAwIDExNC42IDAgMjU2czExNC42IDI1NiAyNTYgMjU2IDI1Ni0xMTQuNiAyNTYtMjU2UzM5Ny40IDAgMjU2MDB6TTI1NiA1MS4yYy01Ny4yIDAtMTA1LjcgMjcuMi0xMzUuOCAzOC4xTDM1My4zIDM2Ni41Yy0xMS41LTEwLjEtMjUuNi0xNy40LTQxLjUtMjEuNCAwLTIwLjYtMTYuOS0zNy41LTM3LjUtMzcuNS0yMC42IDAtMzcuNSAxNi45LTM3LjUgMzcuNSAwIDIwLjYgMTYuOSA0MS4yIDQxLjUgMzcuNUw4MC43IDQyMy41Yy01LjYgMy4xLTEwLjQgNy4zLTE0LjkgMTIuNi02LjQgNy44LTEwLjEgMTcuMS0xMC4xIDI4LjIgMCAxNC45IDcuMyAyOC41IDE5LjMgMzcuNSAyLjQgMTkuMyAxOS4zIDM0LjMgMzkuNSAzMS42IDExLjItMS40IDIyLjItNC42IDMyLjYtOS42bDEzNi43LTE1MS44YzIxLjQgNS4xIDQxLjIgMTkuMyA1MS4yIDM5LjYgMjcuMiA1Ny4yLTM2LjYgMTA1LjctOTMuOCAxMzUuOC0zMC43IDMxLjQtNjkuOSAyOS41LTk5LjcgMzcuNWwtODQuMy04NC4zYy0zLTItNS42LTUuNi01LjYtOS4zIDMuOC0xOC40IDE5LjMtMzEuNCAzNy41LTMxLjQgMjMuMyAwIDM3LjUgOS44IDM5LjUgOS44IDQ3LjktNTQuNiA1MS4yLTEyNi42IDkuOC0xNjEuMkw0MjMuNSAzMDMuN2M2LjggMy44IDEzLjUgMi40IDE3LjItMy41IDM2LjctNDIuNiAzMi41LTExNS42LTkuOC0xNjUuNUNEMzI3LjMgMTM3LjEgMzIzLjcgNTIuMSAyNTYgNTEuMnpNIiBmaWxsPSIjMUMyMzJGOCIvPjwvc3ZnPg=='; 
 const VERCEL_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTMwLjM4IDEuNTdMMTYuMTMgMjUuMjNMMS44OCA1LjgxYTIuNjkgMi42OSAwIDAgMSAxLjkzLTMuMTFsMjYuNzgtLjk5YTIuNjggMi42OCAwIDAgMSAuNjUgLjgyeiIvPjwvc3ZnPg=='; 
 const FIGMA_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUuMDAwMDAwMDAwMDAwMDA0IiBoZWlnaHQ9IjM3LjQ5OTk5OTk5OTk5OTk5NSIgdmlld0JveD0iMCAwIDI1IDM3LjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjY2NjcgMzcuNUgyNS4wVjI1LjAwMDJDMjUuMDAwMiAzNC4yNzM4IDE4LjY3MjcgMzcuNSAxNi42NjY3IDM3LjVaTTI1LjAwMDEgMTIuNDk5OUgyNS4wMDEyVjI1LjAwMDJDMTguNjcyNyAyNS4wMDAzIDE4LjY3MTMgMjUuMDAwMSAxNi42NjY3IDI1LjAwMDJWMTEuNzA0OEwyNS4wMDEyIDExLjcxMjIgMjUuMDAwMSAxMi40OTk5WiIgZmlsbD0iIzAwQzE5RSIvPjxwYXRoIGQ9Ik0xNi42NjY3IDBIMjUuMDAwMVYxMi41MDAxSDE2LjY2NjdWMFoiIGZpbGw9IiNGRDBRQUYiLz48cGF0aCBkPSJNMCAwSDE2LjY2NjZWMTEuNzA0OEgwVjBaIiBmaWxsPSIjRjkyRjI0Ii8+PHBhdGsgZD0iTTE2LjY2NjcgMTEuNzA0OEgwVjI1LjAwMDJIMS45MDE0N0MxLjkwMTQ3IDI1LjAwMDMgMTAuNjUxNCAyNS4wMDYxIDE2LjY2NjcgMjUuMDAwMlYxMS43MDQ4WiIgZmlsbD0iIzEwOTRGMyIvPjxwYXRoIGQ9Ik0xNi42NjY2IDI1LjAwMDJWMzcuNDk5OUgxLjkxNDYxQzEuOTE0NjEgMzQuMjk1IDcuNzI5OTIgMzQuMzM0MyAxNi42NjY2IDI1LjAwMDJaIiBmaWxsPSIjQUUzRTZCIi8+PC9zdmc+'; 
-const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmVyU2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuMorgvMjAwMC9zdmciPgogPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4wNzMgMCAwIDEuMDczIC0zLjY2OSAtMy42NjkpIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCg1LjIzMjUgMCAwIDUuMjMyNSAtMjQwLjgxIC0yNDAuODEpIj4KICAgPHBhdGggZD0ibTQ4LjczNiA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTM3LjU3NyA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTI2LjQxOCA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICA8L2c+CiA8L2c+CiA8L2c+CiA8L3N2Zz4K'; 
+const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmVyU2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuMorgvMjAwMC9zdmciPgogPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4wNzMgMCAwIDEuMDczIC0zLjY2OSAtMy42NjkpIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCg1LjIzMjUgMCAwIDUuMjMyNSAtMjQwLjgxIC0yNDAuODEpIj4KICAgPHBhdGggZD0ibTQ4LjczNiA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTM3LjU3NyA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTI2LjQxOCA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICA8L2c+CiA8L2c+CiA8L3N2Zz4K'; 
 
 // 工具函数
 function useDebounce(value, delay = 200) {
@@ -202,7 +202,6 @@ async function saveUserNavToDB(userId, navData) {
 
 // ===================================
 // 1. 静态图标 URL 映射 (从 App01 数据中提取的精华)
-//    这是 App01 能显示彩色图标的核心原因，现在移植到 App02
 // ===================================
 const STATIC_URL_MAP = {
     // --- 常用开发 ---
@@ -314,11 +313,6 @@ const getLucideIcon = (name) => {
 // ===================================
 // 3. LinkIcon 核心组件 (最终逻辑)
 // ===================================
-
-/**
- * 负责显示链接图标的组件。
- * 优先级: 数据库/用户图标 -> App01静态URL -> DuckDuckGo API -> Lucide 形状图标。
- */
 const LinkIcon = ({ link }) => {
     // 状态：用于跟踪图片加载是否发生错误
     const [hasError, setHasError] = useState(false);
@@ -333,7 +327,7 @@ const LinkIcon = ({ link }) => {
         // 优先级 1: 数据库/用户填写的 icon 字段
         if (link.icon) return link.icon;
 
-        // 优先级 2: App01 的硬编码静态 URL (这是修复的关键！)
+        // 优先级 2: App01 的硬编码静态 URL 
         const staticUrl = getStaticUrl(link.name);
         if (staticUrl) return staticUrl;
 
@@ -1193,7 +1187,7 @@ const InfoModal = ({ title, content, onClose }) => {
     );
 };
 
-// 链接操作模态框 (【修改】增加收藏功能)
+// 链接操作模态框 (已包含收藏功能)
 const LinkActionModal = ({ link, user, onClose, onEdit, onFavorite, isUserNav }) => {
     const canEdit = (user && isUserNav) || (user && user.email === ADMIN_EMAIL && !isUserNav);
     
@@ -1219,7 +1213,7 @@ const LinkActionModal = ({ link, user, onClose, onEdit, onFavorite, isUserNav })
                         <ExternalLink className="w-5 h-5 mr-2" /> 立即访问
                     </a>
 
-                    {/* 2. 【新增】收藏到我的导航 (仅在公共导航视图且已登录时显示) */}
+                    {/* 2. 收藏到我的导航 (仅在公共导航视图且已登录时显示) */}
                     {showFavorite && (
                         <button
                             onClick={() => {
@@ -1260,6 +1254,39 @@ const LinkActionModal = ({ link, user, onClose, onEdit, onFavorite, isUserNav })
 
 
 // ====================================================================
+// 【新增】加载动画组件
+// ====================================================================
+const LoadingScreen = ({ isDone }) => {
+    // 使用 isDone 状态控制透明度和可见性
+    // opacity-0, pointer-events-none 确保动画结束后完全消失并阻止点击
+    return (
+        <div 
+            className={`fixed inset-0 flex flex-col items-center justify-center z-[9999] 
+                        bg-white dark:bg-gray-900 transition-opacity duration-500 ease-in-out
+                        ${isDone ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        >
+            {/* 您的 Logo / 核心图标 */}
+            <div className="text-5xl font-extrabold" style={{ color: '#6A5ACD' }}>
+                <LayoutGrid className="w-16 h-16 animate-bounce text-blue-600 dark:text-blue-400" />
+            </div>
+            <h1 className="text-3xl font-bold mt-4" style={{ color: '#6A5ACD' }}>
+                极速导航网
+            </h1>
+
+            {/* 简易加载条 / 提示 */}
+            <div className="w-40 h-1 mt-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                <div 
+                    className={`h-full bg-blue-600 dark:bg-blue-400 animate-pulse ${isDone ? 'w-full' : 'w-1/2'}`}
+                    style={{ transition: 'width 0.5s' }}
+                ></div>
+            </div>
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">正在努力加载数据...</p>
+        </div>
+    );
+};
+
+
+// ====================================================================
 // App (主应用组件)
 // ====================================================================
 function App() {
@@ -1270,6 +1297,9 @@ function App() {
   const [viewMode, setViewMode] = useState('public'); // 'public' | 'user'
   const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
   
+  // 【修改】新增加载动画状态
+  const [isLoading, setIsLoading] = useState(true); 
+
   // 模态框和面板状态
   const [showAuth, setShowAuth] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -1299,23 +1329,41 @@ function App() {
 
   // 1. 初始化和会话监听
   const loadNavData = useCallback(async (userId) => {
+    let publicLoaded = false;
+    let userLoaded = false;
+    
+    // 加载公共导航
     try {
       const publicData = await fetchPublicNav();
       setPublicNav(publicData);
+      publicLoaded = true;
     } catch (e) {
       console.error("加载公共导航失败:", e);
       setPublicNav(DEFAULT_PUBLIC_NAV);
+      publicLoaded = true;
     }
     
+    // 加载用户导航
     if (userId) {
       try {
         const userData = await fetchUserNav(userId);
         setUserNav(userData);
+        userLoaded = true;
       } catch (e) {
         console.error("加载用户导航失败:", e);
         setUserNav([]);
+        userLoaded = true;
       }
+    } else {
+        userLoaded = true; // 如果没有用户，也算加载完成
     }
+    
+    // 确保公共和用户数据都已尝试加载（或没有用户）后，才结束加载状态
+    if (publicLoaded && userLoaded) {
+        // 增加一个最小等待时间，保证动画体验
+        setTimeout(() => setIsLoading(false), 500); 
+    }
+
   }, []);
 
   // 登出成功后的清理函数 (解决手机端退出问题)
@@ -1337,10 +1385,12 @@ function App() {
     // 监听 Supabase 会话
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
+      const newUser = session?.user ?? null;
+      setUser(newUser);
+      
+      if (newUser) {
         setViewMode('user');
-        loadNavData(session.user.id);
+        loadNavData(newUser.id);
       } else {
         loadNavData(null);
       }
@@ -1364,7 +1414,9 @@ function App() {
     // 检查是否首次访问
     const hasVisited = localStorage.getItem('hasVisited');
     if (!hasVisited) {
-        setShowWelcome(true);
+        // 【注意】首次访问 WelcomeModal 和 LoadingScreen 不冲突，
+        // LoadingScreen 消失后才会显示 WelcomeModal
+        setTimeout(() => setShowWelcome(true), 600); 
         localStorage.setItem('hasVisited', 'true');
     }
 
@@ -1421,7 +1473,7 @@ function App() {
       }
   }
 
-  // 【新增】处理收藏链接逻辑
+  // 处理收藏链接逻辑
   const handleFavoriteLink = async (link) => {
     if (!user) {
         setShowAuth(true);
@@ -1472,7 +1524,8 @@ function App() {
         // 5. 更新本地状态中的链接列表
         updatedUserNav = updatedUserNav.map(c => {
             if (c.id === categoryId) {
-                return { ...c, links: [newLink, ...c.links] };
+                // 确保链接数组存在，并将新链接添加到最前面
+                return { ...c, links: [newLink, ...(c.links || [])] };
             }
             return c;
         });
@@ -1584,240 +1637,245 @@ function App() {
   const currentViewText = viewMode === 'public' ? '公共导航' : '我的导航';
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
-        
-        {/* 顶部固定 Header */}
-        <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10 shadow-md">
-            <div className="max-w-7xl mx-auto px-4 py-3">
-                
-                {/* 第一行：标题 + 模式切换（文本形式） */}
-                <div className="flex items-center w-full relative justify-center"> 
-                    {/* 标题 - 居中并改成紫蓝色 */}
-                    <h1 
-                        className="text-3xl font-bold cursor-pointer" 
-                        // 文字颜色改为紫蓝色 (#6A5ACD)
-                        style={{ color: '#6A5ACD' }} 
-                        onClick={() => {
-                            if (viewMode !== 'public') setViewMode('public');
-                        }}
-                    >
-                        极速导航网
-                    </h1>
-                    
-                    {/* 当前视图模式文字提示 */}
-                    <div className="absolute right-0 text-sm text-gray-500 dark:text-gray-400">
-                         <span className="font-semibold text-blue-600 dark:text-blue-400">{currentViewText}</span>
-                    </div>
-                </div>
+    // 【新增】加载动画组件
+    <>
+        <LoadingScreen isDone={!isLoading} />
 
-                {/* 第二行：搜索框和选择器 - 保持 max-w-xl 宽度并居中 */}
-                <div className="max-w-xl mx-auto"> 
-                    <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-4">
+        <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
+            
+            {/* 顶部固定 Header */}
+            <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10 shadow-md">
+                <div className="max-w-7xl mx-auto px-4 py-3">
+                    
+                    {/* 第一行：标题 + 模式切换（文本形式） */}
+                    <div className="flex items-center w-full relative justify-center"> 
+                        {/* 标题 - 居中并改成紫蓝色 */}
+                        <h1 
+                            className="text-3xl font-bold cursor-pointer" 
+                            // 文字颜色改为紫蓝色 (#6A5ACD)
+                            style={{ color: '#6A5ACD' }} 
+                            onClick={() => {
+                                if (viewMode !== 'public') setViewMode('public');
+                            }}
+                        >
+                            极速导航网
+                        </h1>
                         
-                        {/* 搜索输入框及其图标容器 - 关键修改区域 */}
-                        <div className="relative flex-1"> 
-                            {/* 放大镜图标：颜色从 text-gray-400 修改为 text-blue-400 (亮蓝色) */}
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-400" />
-                            
-                            <input
-                                id="searchInput"
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder={searchMode === 'internal' ? '请输入搜索内容' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
-                                // 关键修改：添加 pl-10 (左侧填充) 为图标留出空间
-                                // 输入框使用 rounded-full (全圆角)
-                                className="w-full px-4 py-3 pl-10 rounded-full border border-gray-700 bg-gray-700 text-white placeholder-gray-400 outline-none focus:ring-blue-500 focus:border-blue-500"
-                            />
+                        {/* 当前视图模式文字提示 */}
+                        <div className="absolute right-0 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="font-semibold text-blue-600 dark:text-blue-400">{currentViewText}</span>
                         </div>
+                    </div>
+
+                    {/* 第二行：搜索框和选择器 - 保持 max-w-xl 宽度并居中 */}
+                    <div className="max-w-xl mx-auto"> 
+                        <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-4">
+                            
+                            {/* 搜索输入框及其图标容器 - 关键修改区域 */}
+                            <div className="relative flex-1"> 
+                                {/* 放大镜图标：颜色从 text-gray-400 修改为 text-blue-400 (亮蓝色) */}
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-400" />
+                                
+                                <input
+                                    id="searchInput"
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder={searchMode === 'internal' ? '请输入搜索内容' : `使用 ${searchEngines.find(e => e.id === searchMode)?.name || ''} 搜索...`}
+                                    // 关键修改：添加 pl-10 (左侧填充) 为图标留出空间
+                                    // 输入框使用 rounded-full (全圆角)
+                                    className="w-full px-4 py-3 pl-10 rounded-full border border-gray-700 bg-gray-700 text-white placeholder-gray-400 outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            
+                            {/* 提交按钮（对站外搜索有效） */}
+                            {searchMode !== 'internal' && (
+                                <button 
+                                    type="submit" 
+                                    // 按钮使用 rounded-full (全圆角)
+                                    // 外部搜索图标颜色为 text-cyan-400 (亮蓝色)
+                                    className="p-3 bg-blue-600 text-cyan-400 rounded-full hover:bg-blue-700 flex items-center justify-center flex-shrink-0"
+                                >
+                                    <Search className="w-5 h-5" />
+                                </button>
+                            )}
+                        </form>
                         
-                        {/* 提交按钮（对站外搜索有效） */}
-                        {searchMode !== 'internal' && (
-                            <button 
-                                type="submit" 
-                                // 按钮使用 rounded-full (全圆角)
-                                // 外部搜索图标颜色为 text-cyan-400 (亮蓝色)
-                                className="p-3 bg-blue-600 text-cyan-400 rounded-full hover:bg-blue-700 flex items-center justify-center flex-shrink-0"
-                            >
-                                <Search className="w-5 h-5" />
-                            </button>
-                        )}
-                    </form>
-                    
-                    {/* 第三行：搜索模式按钮组 - 水平排列在搜索框下方 */}
-                    <div className="flex justify-center gap-3 mt-3">
-                        {searchEngines.map(engine => (
-                            <button
-                                key={engine.id}
-                                type="button" 
-                                onClick={() => {
-                                    setSearchMode(engine.id);
-                                    if (engine.id !== 'internal' && searchTerm) { 
-                                        setSearchTerm(''); 
-                                    }
-                                }}
-                                className={`
-                                    px-4 py-2 text-sm rounded-full font-medium transition-colors 
-                                    ${
-                                        searchMode === engine.id
-                                            ? 'bg-blue-600 text-white shadow-md' 
-                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600' 
-                                    }
-                                `}
-                            >
-                                {engine.name}
-                            </button>
-                        ))}
+                        {/* 第三行：搜索模式按钮组 - 水平排列在搜索框下方 */}
+                        <div className="flex justify-center gap-3 mt-3">
+                            {searchEngines.map(engine => (
+                                <button
+                                    key={engine.id}
+                                    type="button" 
+                                    onClick={() => {
+                                        setSearchMode(engine.id);
+                                        if (engine.id !== 'internal' && searchTerm) { 
+                                            setSearchTerm(''); 
+                                        }
+                                    }}
+                                    className={`
+                                        px-4 py-2 text-sm rounded-full font-medium transition-colors 
+                                        ${
+                                            searchMode === engine.id
+                                                ? 'bg-blue-600 text-white shadow-md' 
+                                                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600' 
+                                        }
+                                    `}
+                                >
+                                    {engine.name}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        {/* ========================================================= */}
-        {/* 右下方悬浮按钮组 - 移除添加链接按钮 (+) */}
-        {/* ========================================================= */}
-        <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3 z-50">
-            
-            {/* 1. 管理员/设置按钮 (仅管理员可见) */}
-            {isAdmin && (
-                 <button
-                    onClick={handleAdminSettingsClick}
-                    title="管理公共导航 (管理员)"
-                    className="p-4 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 transition-transform transform hover:scale-105"
-                >
-                    {/* 齿轮图标作为管理员专用入口 */}
-                    <Settings className="w-6 h-6" /> 
-                </button>
-            )}
-            
-            {/* 2. 模式切换按钮 (仅登录用户可见) */}
-            {user && (
+            {/* ========================================================= */}
+            {/* 右下方悬浮按钮组 */}
+            {/* ========================================================= */}
+            <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-3 z-50">
+                
+                {/* 1. 管理员/设置按钮 (仅管理员可见) */}
+                {isAdmin && (
+                    <button
+                        onClick={handleAdminSettingsClick}
+                        title="管理公共导航 (管理员)"
+                        className="p-4 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 transition-transform transform hover:scale-105"
+                    >
+                        {/* 齿轮图标作为管理员专用入口 */}
+                        <Settings className="w-6 h-6" /> 
+                    </button>
+                )}
+                
+                {/* 2. 模式切换按钮 (仅登录用户可见) */}
+                {user && (
+                    <button
+                        onClick={handleViewModeToggle}
+                        title={viewMode === 'public' ? '切换到我的导航' : '切换到公共导航'}
+                        className={`p-4 rounded-full text-white shadow-xl transition-all duration-300 transform hover:scale-105 ${
+                            viewMode === 'public' 
+                                ? 'bg-purple-600 hover:bg-purple-700' 
+                                : 'bg-indigo-600 hover:bg-indigo-700' 
+                        }`}
+                    >
+                        {viewMode === 'public' 
+                            ? <LayoutGrid className="w-6 h-6" /> 
+                            : <Key className="w-6 h-6" /> 
+                        }
+                    </button>
+                )}
+                
+                {/* 3. 用户/登录入口 (常驻显示) */}
                 <button
-                    onClick={handleViewModeToggle}
-                    title={viewMode === 'public' ? '切换到我的导航' : '切换到公共导航'}
-                    className={`p-4 rounded-full text-white shadow-xl transition-all duration-300 transform hover:scale-105 ${
-                        viewMode === 'public' 
-                            ? 'bg-purple-600 hover:bg-purple-700' 
-                            : 'bg-indigo-600 hover:bg-indigo-700' 
-                    }`}
+                    onClick={handleUserLoginClick}
+                    title={user ? '我的账户/设置' : '登录/注册'}
+                    className="p-4 rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 transition-transform transform hover:scale-105"
                 >
-                    {viewMode === 'public' 
-                        ? <LayoutGrid className="w-6 h-6" /> 
-                        : <Key className="w-6 h-6" /> 
-                    }
+                    {/* 人头图标作为最主要的设置/登录入口 */}
+                    <User className="w-6 h-6" /> 
                 </button>
+                
+            </div>
+            {/* ========================================================= */}
+
+            {/* 内容区，需要为固定头部留出空间 */}
+            <main className="max-w-7xl mx-auto pt-40 px-4 pb-12"> 
+
+            {searchMode === 'internal' && (
+            <PublicNav 
+                navData={user && viewMode === 'user' ? userNav : publicNav} 
+                searchTerm={searchMode === 'internal' ? debouncedSearch : ''} 
+                user={user}
+                viewMode={viewMode}
+                onLinkClick={handleLinkClick}
+            />
             )}
-            
-            {/* 3. 用户/登录入口 (常驻显示) */}
-            <button
-                onClick={handleUserLoginClick}
-                title={user ? '我的账户/设置' : '登录/注册'}
-                className="p-4 rounded-full bg-blue-600 text-white shadow-xl hover:bg-blue-700 transition-transform transform hover:scale-105"
-            >
-                {/* 人头图标作为最主要的设置/登录入口 */}
-                <User className="w-6 h-6" /> 
-            </button>
-            
-        </div>
-        {/* ========================================================= */}
+        </main>
 
-        {/* 内容区，需要为固定头部留出空间 */}
-        <main className="max-w-7xl mx-auto pt-40 px-4 pb-12"> 
-
-        {searchMode === 'internal' && (
-          <PublicNav 
-            navData={user && viewMode === 'user' ? userNav : publicNav} 
-            searchTerm={searchMode === 'internal' ? debouncedSearch : ''} 
-            user={user}
-            viewMode={viewMode}
-            onLinkClick={handleLinkClick}
-          />
+        {/* 模态框 */}
+        {showAuth && (<AuthModal onClose={() => setShowAuth(false)} onLogin={(u) => { setUser(u); setShowAuth(false); }}/>)}
+        {showAdminPanel && isAdmin && (
+            <AdminPanel 
+            navData={publicNav} 
+            setNavData={setPublicNav} 
+            onSave={handleSavePublicNav} 
+            onClose={() => setShowAdminPanel(false)} 
+            />
         )}
-      </main>
-
-      {/* 模态框 */}
-      {showAuth && (<AuthModal onClose={() => setShowAuth(false)} onLogin={(u) => { setUser(u); setShowAuth(false); }}/>)}
-      {showAdminPanel && isAdmin && (
-        <AdminPanel 
-          navData={publicNav} 
-          setNavData={setPublicNav} 
-          onSave={handleSavePublicNav} 
-          onClose={() => setShowAdminPanel(false)} 
-        />
-      )}
-      {showUserPanel && user && (
-        <UserPanel 
-          user={user} 
-          userNav={userNav} 
-          setUserNav={setUserNav} 
-          onSave={handleSaveUserNav} 
-          onClose={() => setShowUserPanel(false)} 
-          onLogoutSuccess={handleLogoutSuccess} 
-        />
-      )}
-      {showWelcome && (<WelcomeModal onClose={() => setShowWelcome(false)} />)}
-      {showInfo && (<InfoModal title={infoContent.title} content={infoContent.content} onClose={() => setShowInfo(false)} />)}
-      {showLinkAction && selectedLink && (
-        <LinkActionModal 
-            link={selectedLink} 
+        {showUserPanel && user && (
+            <UserPanel 
             user={user} 
-            onClose={() => setShowLinkAction(false)} 
-            onEdit={handleEditLink}
-            onFavorite={handleFavoriteLink} // 【修改】传递收藏回调
-            isUserNav={viewMode === 'user'}
-        />
-      )}
-      
-      {/* 页尾 - 包含运行天数和 APK 下载按钮 */}
-      <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>
-            &copy; {new Date().getFullYear()} 极速导航网. All rights reserved. | Powered by Supabase
-            {/* **显示运行天数** */}
-            <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400">
-                运行: {runningDays} 天
-            </span>
-          </p>
-          <div className="flex justify-center items-center mt-2">
-            {/* 关于本站按钮 */}
-            <button onClick={handleShowAbout} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-2">关于本站</button>
-            <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
-            
-            {/* 免责声明按钮 */}
-            <button onClick={handleShowDisclaimer} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-2">免责声明</button>
-            <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
-            
-            {/* **GitHub Icon** */}
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" title="GitHub 仓库" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1">
-                <Github className="w-5 h-5" /> 
-            </a>
-            
-            {/* **地球 Icon 按钮 (已恢复正确链接)** */}
-            <a 
-                href="https://adcwwvux.eu-central-1.clawcloudrun.com/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                title="网站主页/其他链接" 
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1"
-            >
-                <Globe className="w-5 h-5" />
-            </a>
-            
-            {/* **APK 下载按钮 (使用 Download 图标)** */}
-            <a 
-                href="https://zuplqpojcjwbmmjpacqx.supabase.co/storage/v1/object/sign/apk-downloads/jisudaohang.apk?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lYjY4NTU2ZS03N2ExLTRiZjItOWQ0Yi0xMGM5NGMyZWRmOTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcGstZG93bmxvYWRzL2ppc3VkYW9oYW5nLmFwayIsImlhdCI6MTc2NTUxMTQ1NiwiZXhwIjoxNzk3MDQ3NDU2fQ.m0zSOSfpmpxh8FMAuLaWowaA3V0lFI1r4e1dEGYnjX8" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                title="安卓 APK 下载 (注意: 链接包含限时 token)" 
-                className="ml-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
-            >
-                <Download className="w-5 h-5" />
-                <span className="hidden sm:inline">APK 下载</span> 
-            </a>
-          </div>
+            userNav={userNav} 
+            setUserNav={setUserNav} 
+            onSave={handleSaveUserNav} 
+            onClose={() => setShowUserPanel(false)} 
+            onLogoutSuccess={handleLogoutSuccess} 
+            />
+        )}
+        {showWelcome && (<WelcomeModal onClose={() => setShowWelcome(false)} />)}
+        {showInfo && (<InfoModal title={infoContent.title} content={infoContent.content} onClose={() => setShowInfo(false)} />)}
+        {showLinkAction && selectedLink && (
+            <LinkActionModal 
+                link={selectedLink} 
+                user={user} 
+                onClose={() => setShowLinkAction(false)} 
+                onEdit={handleEditLink}
+                onFavorite={handleFavoriteLink} 
+                isUserNav={viewMode === 'user'}
+            />
+        )}
+        
+        {/* 页尾 - 包含运行天数和 APK 下载按钮 */}
+        <footer className="mt-12 border-t border-gray-200 dark:border-gray-700 py-6">
+            <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>
+                &copy; {new Date().getFullYear()} 极速导航网. All rights reserved. | Powered by Supabase
+                {/* **显示运行天数** */}
+                <span className="ml-4 font-semibold text-blue-600 dark:text-blue-400">
+                    运行: {runningDays} 天
+                </span>
+            </p>
+            <div className="flex justify-center items-center mt-2">
+                {/* 关于本站按钮 */}
+                <button onClick={handleShowAbout} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-2">关于本站</button>
+                <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
+                
+                {/* 免责声明按钮 */}
+                <button onClick={handleShowDisclaimer} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-2">免责声明</button>
+                <span className="text-gray-300 dark:text-gray-600 ml-4 mr-2">|</span>
+                
+                {/* **GitHub Icon** */}
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" title="GitHub 仓库" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1">
+                    <Github className="w-5 h-5" /> 
+                </a>
+                
+                {/* **地球 Icon 按钮 (已恢复正确链接)** */}
+                <a 
+                    href="https://adcwwvux.eu-central-1.clawcloudrun.com/" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    title="网站主页/其他链接" 
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 mx-1"
+                >
+                    <Globe className="w-5 h-5" />
+                </a>
+                
+                {/* **APK 下载按钮 (使用 Download 图标)** */}
+                <a 
+                    href="https://zuplqpojcjwbmmjpacqx.supabase.co/storage/v1/object/sign/apk-downloads/jisudaohang.apk?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lYjY4NTU2ZS03N2ExLTRiZjItOWQ0Yi0xMGM5NGMyZWRmOTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcGstZG93bmxvYWRzL2ppc3VkYW9oYW5nLmFwayIsImlhdCI6MTc2NTUxMTQ1NiwiZXhwIjoxNzk3MDQ3NDU2fQ.m0zSOSfpmpxh8FMAuLaOwaA3V0lFI1r4e1dEGYnjX8" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    title="安卓 APK 下载 (注意: 链接包含限时 token)" 
+                    className="ml-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
+                >
+                    <Download className="w-5 h-5" />
+                    <span className="hidden sm:inline">APK 下载</span> 
+                </a>
+            </div>
+            </div>
+        </footer>
         </div>
-      </footer>
-    </div>
+    </>
   );
 }
 
