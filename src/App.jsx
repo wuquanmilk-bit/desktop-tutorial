@@ -1,7 +1,4 @@
 // src/App.jsx
-// =========================================================================
-// 🎯 步骤 A：替换顶部的所有导入语句（请用这个代码块替换您文件顶部所有的 import... 语句）
-// =========================================================================
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 
@@ -23,14 +20,11 @@ const ADMIN_EMAIL = '115382613@qq.com';
 // **图标 Base64 编码区域**
 // --------------------------------------------------------------------
 // **重要说明：请将以下占位符替换为您实际的 SVG 或 PNG Base64 字符串。**
-// 
-// 转换方法：将图标文件上传到在线 Base64 转换工具，将结果粘贴到下方。
-// 格式应为：'data:image/svg+xml;base64,...' 或 'data:image/png;base64,...'
-const GITHUB_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxNzUiIGhlaWdodD0iMTc1IiB2aWV3Qm94PSIwLDAsMTc1LDE3NSI+PGcgaWQ9InN2Z18zIj48cGF0aCBmaWxsPSIjMjAyNjI3IiBkPSJNMzguNjY2NywzOC42NjY3aDEzNy42NjY2VjEzMi4zMzMzaC0xMzcuNjY2NlYzOC42NjY3WiIgY2xhc3M9ImdhdGUtaWNvbiByZWd1bGFyIi8+PC9nPg8vc3ZnPg=='; // **请替换为真实的 GitHub Base64**
-const SUPABASE_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMjU2IDBDMTE0LjYgMCAwIDExNC42IDAgMjU2czExNC42IDI1NiAyNTYgMjU2IDI1Ni0xMTQuNiAyNTYtMjU2UzM5Ny40IDAgMjU2IDB6TTI1NiA1MS4yYy01Ny4yIDAtMTA1LjcgMjcuMi0xMzUuOCAzOC4xTDM1My4zIDM2Ni41Yy0xMS41LTEwLjEtMjUuNi0xNy40LTQxLjUtMjEuNCAwLTIwLjYtMTYuOS0zNy41LTM3LjUtMzcuNS0yMC42IDAtMzcuNSAxNi45LTM3LjUgMzcuNSAwIDIwLjYgMTYuOSA0MS4yIDQxLjUgMzcuNUw4MC43IDQyMy41Yy01LjYgMy4xLTEwLjQgNy4zLTE0LjkgMTIuNi02LjQgNy44LTEwLjEgMTcuMS0xMC4xIDI4LjIgMCAxNC45IDcuMyAyOC41IDE5LjMgMzcuNSAyLjQgMTkuMyAxOS4zIDM0LjMgMzkuNSAzMS42IDExLjItMS40IDIyLjItNC42IDMyLjYtOS42bDEzNi43LTE1MS44YzIxLjQgNS4xIDQxLjIgMTkuMyA1MS4yIDM5LjYgMjcuMiA1Ny4yLTM2LjYgMTA1LjctOTMuOCAxMzUuOC0zMC43IDMxLjQtNjkuOSAyOS41LTk5LjcgMzcuNWwtODQuMy04NC4zYy0zLTIuNC01LjYtNS42LTUuNi05LjMgMy44LTE4LjQgMTkuMy0zMS40IDM3LjUtMzEuNCAyMy4zIDAgMzcuNSA5LjggMzkuNSA5LjggNDcuOS01NC42IDUxLjItMTI2LjYgOS44LTE2MS4yTDQyMy41IDUwMy43YzYuOCAzLjggMTMuNSAyLjQgMTcuMi0zLjUgMzYuNy00Mi42IDMyLjUtMTE1LjYtOS44LTE2NS41QzQyMy41IDEzNy4xIDMyMy43IDUyLjEgMjU2IDUxLjJ6IiBmaWxsPSIjMUMyMzJGOCIvPjwvc3ZnPg=='; // **请替换为真实的 Supabase Base64**
-const VERCEL_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTMwLjM4IDEuNTdMMTYuMTMgMjUuMjNMMS44OCA1LjgxYTIuNjkgMi42OSAwIDAgMSAxLjkzLTMuMTFsMjYuNzgtLjk5YTIuNjggMi42OCAwIDAgMSAuNjUgLjgyeiIvPjwvc3ZnPg=='; // **请替换为真实的 Vercel Base64**
-const FIGMA_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUuMDAwMDAwMDAwMDAwMDA0IiBoZWlnaHQ9IjM3LjQ5OTk5OTk5OTk5OTk5NSIgdmlld0JveD0iMCAwIDI1IDM3LjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjY2NjcgMzcuNUgyNS4wVjI1LjAwMDJDMjUuMDAwMiAzNC4yNzM4IDE4LjY3MjcgMzcuNSAxNi42NjY3IDM3LjVaTTI1LjAwMDEgMTIuNDk5OUgyNS4wMDEyVjI1LjAwMDJDMTguNjcyNyAyNS4wMDAzIDE4LjY3MTMgMjUuMDAwMSAxNi42NjY3IDI1LjAwMDJWMTEuNzA0OEwyNS4wMDEyIDExLjcxMjIgMjUuMDAwMSAxMi40OTk5WiIgZmlsbD0iIzAwQzE5RSIvPjxwYXRoIGQ9Ik0xNi42NjY3IDBIMjUuMDAwMVYxMi41MDAxSDE2LjY2NjdWMFoiIGZpbGw9IiNGRDBRQUYiLz48cGF0aCBkPSJNMCAwSDE2LjY2NjZWMTEuNzA0OEgwVjBaIiBmaWxsPSIjRjkyRjI0Ii8+PHBhdGggZD0iTTE2LjY2NjcgMTEuNzA0OEgwVjI1LjAwMDJIMS45MDE0N0MxLjkwMTQ3IDI1LjAwMDMgMTAuNjUxNCAyNS4wMDYxIDE2LjY2NjcgMjUuMDAwMlYxMS43MDQ4WiIgZmlsbD0iIzEwOTRGMyIvPjxwYXRoIGQ9Ik0xNi42NjY2IDI1LjAwMDJWMzcuNDk5OUgxLjkxNDYxQzEuOTE0NjEgMzQuMjk1IDcuNzI5OTIgMzQuMzM0MyAxNi42NjY2IDI1LjAwMDJaIiBmaWxsPSIjQUUzRTZCIi8+PC9zdmc+'; // **请替换为真实的 Figma Base64**
-const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmVyU2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuorgvMjAwMC9zdmciPgogPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4wNzMgMCAwIDEuMDczIC0zLjY2OSAtMy42NjkpIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCg1LjIzMjUgMCAwIDUuMjMyNSAtMjQwLjgxIC0yNDAuODEpIj4KICAgPHBhdGggZD0ibTQ4LjczNiA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTM3LjU3NyA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTI2LjQxOCA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICA8L2c+CiA8L2c+CiA8L3N2Zz4K'; // **请替换为真实的 Unsplash Base64**
+const GITHUB_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxNzUiIGhlaWdodD0iMTc1IiB2aWV3Qm94PSIwLDAsMTc1LDE3NSI+PGcgaWQ9InN2Z18zIj48cGF0aCBmaWxsPSIjMjAyNjI3IiBkPSJNMzguNjY2NywzOC42NjY3aDEzNy42NjY2VjEzMi4zMzMzaC0xMzcuNjY2NlYzOC42NjY3WiIgY2xhc3M9ImdhdGUtaWNvbiByZWd1bGFyIi8+PC9nPg8vc3ZnPg=='; 
+const SUPABASE_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBkPSJNMjU2IDBDMTE0LjYgMCAwIDExNC42IDAgMjU2czExNC42IDI1NiAyNTYgMjU2IDI1Ni0xMTQuNiAyNTYtMjU2UzM5Ny40IDAgMjU2IDB6TTI1NiA1MS4yYy01Ny4yIDAtMTA1LjcgMjcuMi0xMzUuOCAzOC4xTDM1My4zIDM2Ni41Yy0xMS41LTEwLjEtMjUuNi0xNy40LTQxLjUtMjEuNCAwLTIwLjYtMTYuOS0zNy41LTM3LjUtMzcuNS0yMC42IDAtMzcuNSAxNi45LTM3LjUgMzcuNSAwIDIwLjYgMTYuOSA0MS4yIDQxLjUgMzcuNUw4MC43IDQyMy41Yy01LjYgMy4xLTEwLjQgNy4zLTE0LjkgMTIuNi02LjQgNy44LTEwLjEgMTcuMS0xMC4xIDI4LjIgMCAxNC45IDcuMyAyOC41IDE5LjMgMzcuNSAyLjQgMTkuMyAxOS4zIDM0LjMgMzkuNSAzMS42IDExLjItMS40IDIyLjItNC42IDMyLjYtOS42bDEzNi43LTE1MS44YzIxLjQgNS4xIDQxLjIgMTkuMyA1MS4yIDM5LjYgMjcuMiA1Ny4yLTM2LjYgMTA1LjctOTMuOCAxMzUuOC0zMC43IDMxLjQtNjkuOSAyOS41LTk5LjcgMzcuNWwtODQuMy04NC4zYy0zLTIuNC01LjYtNS42LTUuNi05LjMgMy44LTE4LjQgMTkuMy0zMS40IDM3LjUtMzEuNCAyMy4zIDAgMzcuNSA5LjggMzkuNSA5LjggNDcuOS01NC42IDUxLjItMTI2LjYgOS44LTE2MS4yTDQyMy41IDUwMy43YzYuOCAzLjggMTMuNSAyLjQgMTcuMi0zLjUgMzYuNy00Mi42IDMyLjUtMTE1LjYtOS44LTE2NS41QzQyMy41IDEzNy4xIDMyMy43IDUyLjEgMjU2IDUxLjJ6IiBmaWxsPSIjMUMyMzJGOCIvPjwvc3ZnPg=='; 
+const VERCEL_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzYgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTMwLjM4IDEuNTdMMTYuMTMgMjUuMjNMMS44OCA1LjgxYTIuNjkgMi42OSAwIDAgMSAxLjkzLTMuMTFsMjYuNzgtLjk5YTIuNjggMi42OCAwIDAgMSAuNjUgLjgyeiIvPjwvc3ZnPg=='; 
+const FIGMA_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUuMDAwMDAwMDAwMDAwMDA0IiBoZWlnaHQ9IjM3LjQ5OTk5OTk5OTk5OTk5NSIgdmlld0JveD0iMCAwIDI1IDM3LjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTE2LjY2NjcgMzcuNUgyNS4wVjI1LjAwMDJDMjUuMDAwMiAzNC4yNzM4IDE4LjY3MjcgMzcuNSAxNi42NjY3IDM3LjVaTTI1LjAwMDEgMTIuNDk5OUgyNS4wMDEyVjI1LjAwMDJDMTguNjcyNyAyNS4wMDAzIDE4LjY3MTMgMjUuMDAwMSAxNi42NjY3IDI1LjAwMDJWMTEuNzA0OEwyNS4wMDEyIDExLjcxMjIgMjUuMDAwMSAxMi40OTk5WiIgZmlsbD0iIzAwQzE5RSIvPjxwYXRoIGQ9Ik0xNi42NjY3IDBIMjUuMDAwMVYxMi41MDAxSDE2LjY2NjdWMFoiIGZpbGw9IiNGRDBRQUYiLz48cGF0aCBkPSJNMCAwSDE2LjY2NjZWMTEuNzA0OEgwVjBaIiBmaWxsPSIjRjkyRjI0Ii8+PHBhdGggZD0iTTE2LjY2NjcgMTEuNzA0OEgwVjI1LjAwMDJIMS45MDE0N0MxLjkwMTQ3IDI1LjAwMDMgMTAuNjUxNCAyNS4wMDYxIDE2LjY2NjcgMjUuMDAwMlYxMS43MDQ4WiIgZmlsbD0iIzEwOTRGMyIvPjxwYXRoIGQ9Ik0xNi42NjY2IDI1LjAwMDJWMzcuNDk5OUgxLjkxNDYxQzEuOTE0NjEgMzQuMjk1IDcuNzI5OTIgMzQuMzM0MyAxNi42NjY2IDI1LjAwMDJaIiBmaWxsPSIjQUUzRTZCIi8+PC9zdmc+'; 
+const UNSPLASH_ICON_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmVyU2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMuborgvMjAwMC9zdmciPgogPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4wNzMgMCAwIDEuMDczIC0zLjY2OSAtMy42NjkpIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCg1LjIzMjUgMCAwIDUuMjMyNSAtMjQwLjgxIC0yNDAuODEpIj4KICAgPHBhdGggZD0ibTQ4LjczNiA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTM3LjU3NyA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICAgPHBhdGggZD0ibTI2LjQxOCA1MC42MTMgNS4xOTY3LTUuMi0yLjU5ODgtMi41OTY3LTUuMTk2NyA1LjIgMi41OTg4IDIuNTk2N3oiLz4KICA8L2c+CiA8L2c+CiA8L3N2Zz4K'; 
 
 // 工具函数
 function useDebounce(value, delay = 200) {
@@ -62,18 +56,15 @@ function useRunningDays(startDateString) {
 }
 
 
-// 默认数据 (数据库加载失败时的回退) - 已硬编码 Base64
+// 默认数据 (数据库加载失败时的回退)
 const DEFAULT_PUBLIC_NAV = [
   {
     id: 1,
     category: '常用开发',
     sort_order: 1,
     links: [
-      // GitHub: 使用 Base64 硬编码
       { id: 'link-1', name: 'GitHub', url: 'https://github.com', description: '代码托管平台', icon: GITHUB_ICON_BASE64 },
-      // Supabase: 使用 Base64 硬编码 (注意：原代码中 Supabase 缺失 icon 字段，现已添加)
       { id: 'link-2', name: 'Supabase', url: 'https://supabase.com', description: '后端即服务', icon: SUPABASE_ICON_BASE64 },
-      // Vercel: 使用 Base64 硬编码
       { id: 'link-3', name: 'Vercel', url: 'https://vercel.com', description: '部署平台', icon: VERCEL_ICON_BASE64 }
     ]
   },
@@ -82,16 +73,14 @@ const DEFAULT_PUBLIC_NAV = [
     category: '设计资源',
     sort_order: 2,
     links: [
-      // Figma: 使用 Base64 硬编码
       { id: 'link-4', name: 'Figma', url: 'https://figma.com', description: '设计工具', icon: FIGMA_ICON_BASE64 },
-      // Unsplash: 使用 Base64 硬编码
       { id: 'link-5', name: 'Unsplash', url: 'https://unsplash.com', description: '免费图片', icon: UNSPLASH_ICON_BASE64 }
     ]
   }
 ];
 
 // ====================================================================
-// 核心数据同步函数 (保持不变)
+// 核心数据同步函数
 // ====================================================================
 
 async function fetchPublicNav() {
@@ -178,8 +167,6 @@ async function savePublicNavToDB(navData) {
 }
 
 async function saveUserNavToDB(userId, navData) {
-    
-    // 强制使用数组索引 (index) 作为 sort_order
     const categoriesToSave = navData.map((c, index) => ({ 
         id: typeof c.id === 'number' && c.id > 0 ? c.id : null, 
         category: c.category, 
@@ -209,74 +196,127 @@ async function saveUserNavToDB(userId, navData) {
     if (error) throw error;
 }
 
-// ====================================================================
-// 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
-// ====================================================================
-
-// 链接图标组件 (已优化，Base64 硬编码的图标会直接加载，外部网络失败后不再尝试 Favicon API)
 // =========================================================================
-// 🎯 代码块 2: 完整的图标逻辑代码块 (替换旧的 LinkIcon 组件和它之前的所有图标辅助函数)
+// 🎯 核心组件 (LinkIcon, LinkCard, PublicNav, LinkForm)
 // =========================================================================
 
 // ===================================
-// 1. 图标映射和获取函数 (Lucide 回退逻辑)
+// 1. 详细图标映射 (从 App01 移植)
 // ===================================
-
-// 定义 Lucide 图标的名称映射表
 const ICON_MAP = {
-    // 基础和常用
-    'GITHUB': Github,
-    'GIT': Github,
-    'CLOUD': Cloud,
-    'SUPABASE': Database,
-    'DB': Database,
-    'NETWORK': Network,
-    'SERVER': Server,
-    'SHOPPING': ShoppingCart,
-    'MONITOR': Monitor,
+    // --- 常用开发 & 基础设施 ---
+    'github': Github, 
+    'git': Github,
+    'cloudflare': Cloud, 
+    'supabase': Database, 
+    'db': Database,
+    'database': Database,
+    'aws': Server, 
+    'azure': Server, 
+    '阿里云': Server, 
+    '腾讯云': Server, 
+    '华为云': Server, 
+    'oracle cloud': Database,
+    'ibm cloud': Database,
+    'server': Server,
+    'network': Network,
+    'monitor': Monitor,
 
-    // AI/工具
-    'BOT': Bot,
-    'AI': Bot,
-    'GPT': Bot,
-    'WAND': Wand,
-    'WRITER': Wrench,
+    // --- AI & 大模型 ---
+    'chatgpt': Bot, 
+    'gemini': Wand, 
+    'deepseek': Bot, 
+    'bot': Bot,
+    'ai': Bot,
+    '阿里千问': Bot, 
+    '腾讯元宝': Bot, 
+    '豆包': Bot, 
+    '即梦': Wand, 
+    '通义万相': Wand,
+    'wand': Wand,
+    'writer': Wrench,
 
-    // 内容和媒体
-    'PLAY': Play,
-    'YOUTUBE': Play,
-    'CAMERA': Camera,
-    
-    // 开发/技术
-    'CODE': Code,
-    
-    // 账户和时间
-    'TIME': Clock,
-    'MAIL': Mail,
-    'LOGIN': User,
-    'PASSWORD': Lock
+    // --- 视频 & 娱乐 ---
+    '哔哩哔哩': Play, 
+    'youtube': Play, 
+    'play': Play,
+    '爱奇艺': Monitor, 
+    '在线音乐': Play, 
+    '视频下载': Monitor,
+    '星空音乐下载': Play, 
+    'camera': Camera,
+    'instagram': Camera, 
+    '快手': Camera, 
+    '抖音': Camera, 
+    'snapchat': Camera,
+
+    // --- 工具 & 网络检测 ---
+    'browserscan': Network, 
+    'ping0': Network, 
+    '真实地址生成器': Network, 
+    'itdog': Network, 
+    'ip地址查询': Network, 
+    '在线代理': Network,
+    '免费网络代理': Network,
+    '在线工具网': Wrench, 
+    'py混淆': Wrench, 
+    '二维码生成': Wrench, 
+    'argo tunnel json获取': Wrench, 
+    'base64转换': Wrench, 
+    '一键抠图': Wand, 
+    '网址缩短': Wrench,
+    'flexclip': Wand, 
+    'js混淆': Wrench, 
+    '文件格式转换': Wrench, 
+    '第一工具网': Wrench,
+    'php混淆加密': Wrench, 
+    'json工具': Wrench, 
+    'emoji 表情大全': Wrench,
+    'code': Code,
+
+    // --- 搜索 & 电商 ---
+    '谷歌': Search, 
+    '百度': Search, 
+    '必应': Search, 
+    'google': Search,
+    'baidu': Search,
+    'bing': Search,
+    '淘宝网': ShoppingCart, 
+    '京东商城': ShoppingCart,
+    'shopping': ShoppingCart,
+
+    // --- 账户 & 其他 ---
+    'time': Clock,
+    'mail': Mail,
+    'login': User,
+    'password': Lock
 };
 
 // 工具函数：根据链接名称获取匹配的 Lucide 图标组件
 const getLucideIcon = (name) => {
-    // 如果名称为空，回退到地球图标
     if (!name) return Globe; 
     
-    const upperName = name.toUpperCase();
+    // 1. 标准化名称：转小写，移除所有空格
+    const key = name.toLowerCase().replace(/\s/g, '');
     
-    // 尝试匹配链接名称
-    for (const key in ICON_MAP) {
-        if (upperName.includes(key)) {
-            return ICON_MAP[key];
+    // 2. 尝试直接匹配
+    if (ICON_MAP[key]) {
+        return ICON_MAP[key];
+    }
+    
+    // 3. 尝试模糊匹配 (如果名称包含某个关键词)
+    for (const mapKey in ICON_MAP) {
+        if (key.includes(mapKey)) {
+            return ICON_MAP[mapKey];
         }
     }
     
-    // 最终回退：如果没有任何匹配，使用 Globe
+    // 4. 最终回退
     return Globe; 
 };
 
 // ===================================
-// 2. LinkIcon 核心组件 (三层图标逻辑)
+// 2. LinkIcon 核心组件
 // ===================================
 
 /**
@@ -284,49 +324,47 @@ const getLucideIcon = (name) => {
  * 优先级: link.icon (自定义/Base64) -> 外部 Favicon API (DuckDuckGo) -> Lucide 图标回退。
  */
 const LinkIcon = ({ link }) => {
-    // 状态：用于跟踪图片加载是否发生错误 (确保只尝试一次)
+    // 状态：用于跟踪图片加载是否发生错误
     const [hasError, setHasError] = useState(false);
 
-    // 效应：当链接或图标源改变时，重置错误状态，重新尝试加载
+    // 效应：当链接或图标源改变时，重置错误状态
     useEffect(() => {
         setHasError(false);
     }, [link.url, link.icon]);
 
     // 确定图标 URL 的核心逻辑
     const imageUrl = useMemo(() => {
-        // 优先级 1: 如果 link.icon 字段有值，直接使用它 (自定义 URL 或 Base64)
+        // 优先级 1: 如果 link.icon 字段有值，直接使用它
         if (link.icon) {
             return link.icon;
         }
 
-        // 优先级 2: 如果 link.icon 为空，使用外部 Favicon API 自动抓取
+        // 优先级 2: 如果 link.icon 为空，使用外部 Favicon API
         try {
             const urlObj = new URL(link.url);
-            // 使用 DuckDuckGo 的公共代理服务，稳定且比 Google Favicon 响应快
+            // DuckDuckGo 图标 API
             return `https://icons.duckduckgo.com/ip3/${urlObj.hostname}.ico`;
         } catch {
-            // URL 无效，返回空字符串，进入 Lucide 回退模式
             return ''; 
         }
     }, [link.icon, link.url]);
 
-    // 获取 Lucide 回退图标组件
+    // 获取 Lucide 回退图标组件 (基于名称匹配)
     const FallbackIconComponent = getLucideIcon(link.name); 
     
     return (
-        // 样式容器：使用您文件中 LinkIcon 容器原本的样式
         <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
             {/* 检查条件：如果加载失败 (hasError) 或没有生成 URL (!imageUrl)，则显示回退图标 */}
             {hasError || !imageUrl ? (
-                // 优先级 3: 显示 Lucide 回退图标 (使用 link.name 匹配)
+                // 优先级 3: 显示 Lucide 回退图标
                 <FallbackIconComponent className="w-6 h-6 text-blue-500 dark:text-blue-400"/>
             ) : (
-                // 优先级 1/2: 显示远程图片 (Base64 或 Favicon)
+                // 优先级 1/2: 显示远程图片
                 <img 
                     src={imageUrl} 
                     alt={`${link.name} icon`} 
                     className="w-6 h-6 object-contain" 
-                    onError={() => setHasError(true)} // ❗ 关键：图片加载失败时，触发 hasError=true 进入 Lucide 回退
+                    onError={() => setHasError(true)} 
                     loading="lazy"
                 />
             )}
@@ -334,7 +372,7 @@ const LinkIcon = ({ link }) => {
     );
 };
 
-// 链接卡片 (保持不变)
+// 链接卡片
 const LinkCard = ({ link, onOpen }) => (
   <div 
     onClick={() => onOpen(link)} 
@@ -351,7 +389,7 @@ const LinkCard = ({ link, onOpen }) => (
   </div>
 );
 
-// 公共导航显示组件 (保持不变)
+// 公共导航显示组件
 const PublicNav = ({ navData = [], searchTerm = '', user, viewMode, onLinkClick }) => {
   const filtered = useMemo(() => {
     if (!searchTerm) return navData;
