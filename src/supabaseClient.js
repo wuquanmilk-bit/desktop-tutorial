@@ -1,5 +1,4 @@
-// src/supabaseClient.js - 修正后的安全版本
-
+// src/supabaseClient.js
 import { createClient } from '@supabase/supabase-js'
 
 // 使用安全的配置获取方法
@@ -8,21 +7,20 @@ const getConfig = () => {
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY
   
   // 检查环境变量是否正确
-  // 只检查是否存在，避免在控制台打印敏感密钥
-  console.log('🔧 环境变量检查:', { envUrl: envUrl ? '已设置' : '未设置', envKey: envKey ? '已设置' : '未设置' })
+  console.log('🔧 环境变量检查:', { envUrl, envKey })
   
-  // 【重要修改】移除所有硬编码的默认值和 URL 链接
-  // 如果环境变量未设置，则抛出错误，强制开发者在 .env.local 中配置
-  
-  if (!envUrl) {
-    throw new Error('❌ VITE_SUPABASE_URL 未设置。请检查 .env.local 文件是否配置，以及 Vite 服务器是否已重启。')
+  if (!envUrl || envUrl === '链接') {
+    console.warn('⚠️ 环境变量VITE_SUPABASE_URL未正确设置，使用默认值')
+    return {
+      url: 'https://zuplqpojcjwbmmjpacqx.supabase.co',
+      key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1cGxxcG9qY2p3Ym1tanBhY3F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxOTc2NjEsImV4cCI6MjA4MDc3MzY2MX0.efrwhQ_DBBix8HRymgNwfkosi64R8OotOO1keL3oK5o'
+    }
   }
   
   if (!envKey) {
-    throw new Error('❌ VITE_SUPABASE_ANON_KEY 未设置。请检查 .env.local 文件是否配置。')
+    throw new Error('❌ 请检查.env.local文件中的VITE_SUPABASE_ANON_KEY配置')
   }
   
-  // 如果检查通过，直接返回从 .env.local 加载的环境变量
   return { url: envUrl, key: envKey }
 }
 
