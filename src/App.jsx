@@ -2,11 +2,11 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 
-// 确保导入了所有新旧图标，解决了 Cloud, Database 等图标缺失的问题
+// 1. 【修改】引入 Heart 图标
 import { 
     ExternalLink, X, Search, Settings, Edit, Trash2, Plus, LogOut, User, Mail, Lock, Key, LayoutGrid, 
     Github, Globe, Download, Cloud, Database, Bot, Play, Camera, Network, Server, ShoppingCart, Wand, Monitor, 
-    Wrench, Code, Clock 
+    Wrench, Code, Clock, Heart 
 } from 'lucide-react'; 
 
 import './index.css';
@@ -16,7 +16,7 @@ import './index.css';
 // ====================================================================
 const ADMIN_EMAIL = '115382613@qq.com';
 
-// --------------------------------------------------------------------\
+// --------------------------------------------------------------------
 // **图标 Base64 编码区域**
 // --------------------------------------------------------------------
 // **重要说明：请将以下占位符替换为您实际的 SVG 或 PNG Base64 字符串。**
@@ -1193,9 +1193,12 @@ const InfoModal = ({ title, content, onClose }) => {
     );
 };
 
-// 链接操作模态框 (保持不变)
-const LinkActionModal = ({ link, user, onClose, onEdit, isUserNav }) => {
+// 链接操作模态框 (【修改】增加收藏功能)
+const LinkActionModal = ({ link, user, onClose, onEdit, onFavorite, isUserNav }) => {
     const canEdit = (user && isUserNav) || (user && user.email === ADMIN_EMAIL && !isUserNav);
+    
+    // 显示"收藏"按钮的条件：用户已登录 且 当前不是"我的导航"视图
+    const showFavorite = user && !isUserNav;
 
     return (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -1216,7 +1219,20 @@ const LinkActionModal = ({ link, user, onClose, onEdit, isUserNav }) => {
                         <ExternalLink className="w-5 h-5 mr-2" /> 立即访问
                     </a>
 
-                    {/* 2. 编辑操作 (如果可编辑) */}
+                    {/* 2. 【新增】收藏到我的导航 (仅在公共导航视图且已登录时显示) */}
+                    {showFavorite && (
+                        <button
+                            onClick={() => {
+                                onClose();
+                                onFavorite(link);
+                            }}
+                            className="flex items-center justify-center w-full py-3 bg-pink-600 text-white rounded-lg font-semibold hover:bg-pink-700 transition-colors"
+                        >
+                            <Heart className="w-5 h-5 mr-2" /> 收藏到我的导航
+                        </button>
+                    )}
+
+                    {/* 3. 编辑操作 (如果可编辑) */}
                     {canEdit && (
                         <button
                             onClick={() => {
@@ -1229,7 +1245,7 @@ const LinkActionModal = ({ link, user, onClose, onEdit, isUserNav }) => {
                         </button>
                     )}
 
-                    {/* 3. 取消 */}
+                    {/* 4. 取消 */}
                     <button
                         onClick={onClose}
                         className="flex items-center justify-center w-full py-3 border rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -1404,6 +1420,79 @@ function App() {
           setShowUserPanel(true);
       }
   }
+
+  // 【新增】处理收藏链接逻辑
+  const handleFavoriteLink = async (link) => {
+    if (!user) {
+        setShowAuth(true);
+        return;
+    }
+
+    try {
+        const DEFAULT_FAV_CATEGORY = '默认收藏';
+        let updatedUserNav = [...userNav];
+        
+        // 1. 查找是否存在"默认收藏"分类
+        let favCategory = updatedUserNav.find(c => c.category === DEFAULT_FAV_CATEGORY);
+        let categoryId;
+
+        // 2. 如果不存在，创建一个新的分类
+        if (!favCategory) {
+            const newId = Date.now();
+            favCategory = {
+                id: newId,
+                user_id: user.id,
+                category: DEFAULT_FAV_CATEGORY,
+                sort_order: 0, // 放在最前面
+                links: []
+            };
+            updatedUserNav.unshift(favCategory);
+            categoryId = newId;
+        } else {
+            categoryId = favCategory.id;
+        }
+
+        // 3. 检查链接是否已存在 (通过URL判断简单防重)
+        const exists = favCategory.links.some(l => l.url === link.url);
+        if (exists) {
+            alert('该链接已在您的“默认收藏”中！');
+            return;
+        }
+
+        // 4. 构建新链接对象
+        const newLink = {
+            id: `link-fav-${Date.now()}`,
+            name: link.name,
+            url: link.url,
+            description: link.description || '',
+            icon: link.icon || null,
+            sort_order: 0 // 放在最前面
+        };
+
+        // 5. 更新本地状态中的链接列表
+        updatedUserNav = updatedUserNav.map(c => {
+            if (c.id === categoryId) {
+                return { ...c, links: [newLink, ...c.links] };
+            }
+            return c;
+        });
+
+        // 6. 更新 UI 状态
+        setUserNav(updatedUserNav);
+
+        // 7. 自动保存到数据库
+        await saveUserNavToDB(user.id, updatedUserNav);
+        
+        // 8. 重新加载以确保 ID 同步
+        await loadNavData(user.id);
+        
+        alert(`已成功收藏 "${link.name}" 到您的导航！`);
+        
+    } catch (e) {
+        console.error("收藏失败:", e);
+        alert("收藏失败，请重试");
+    }
+  };
 
   const handleSavePublicNav = async () => {
       try {
@@ -1674,6 +1763,7 @@ function App() {
             user={user} 
             onClose={() => setShowLinkAction(false)} 
             onEdit={handleEditLink}
+            onFavorite={handleFavoriteLink} // 【修改】传递收藏回调
             isUserNav={viewMode === 'user'}
         />
       )}
