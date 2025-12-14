@@ -60,21 +60,109 @@ function useRunningDays(startDateString) {
 const DEFAULT_PUBLIC_NAV = [
   {
     id: 1,
-    category: '常用开发',
+    category: 'AI人工智能',
     sort_order: 1,
     links: [
-      { id: 'link-1', name: 'GitHub', url: 'https://github.com', description: '代码托管平台', icon: GITHUB_ICON_BASE64 },
-      { id: 'link-2', name: 'Supabase', url: 'https://supabase.com', description: '后端即服务', icon: SUPABASE_ICON_BASE64 },
-      { id: 'link-3', name: 'Vercel', url: 'https://vercel.com', description: '部署平台', icon: VERCEL_ICON_BASE64 }
+      { id: 'link-1', name: 'ChatGPT', url: 'https://chatgpt.com', description: 'OpenAI聊天助手', icon: '' },
+      { id: 'link-2', name: 'Claude', url: 'https://claude.ai', description: 'Anthropic AI助手', icon: '' },
+      { id: 'link-3', name: '通义千问', url: 'https://tongyi.aliyun.com', description: '阿里云AI', icon: '' },
+      { id: 'link-4', name: '文心一言', url: 'https://yiyan.baidu.com', description: '百度AI', icon: '' },
+      { id: 'link-5', name: '智谱清言', url: 'https://chatglm.cn', description: '清华AI', icon: '' },
+      { id: 'link-6', name: 'DeepSeek', url: '链接20', description: '深度求索AI', icon: '' },
+      { id: 'link-7', name: 'Gemini', url: 'https://gemini.google.com', description: '谷歌AI', icon: '' },
+      { id: 'link-8', name: 'Kimi', url: 'https://kimi.moonshot.cn', description: '月之暗面AI', icon: '' }
     ]
   },
   {
     id: 2,
-    category: '设计资源',
+    category: '开发工具',
     sort_order: 2,
     links: [
-      { id: 'link-4', name: 'Figma', url: 'https://figma.com', description: '设计工具', icon: FIGMA_ICON_BASE64 },
-      { id: 'link-5', name: 'Unsplash', url: 'https://unsplash.com', description: '免费图片', icon: UNSPLASH_ICON_BASE64 }
+      { id: 'link-9', name: 'GitHub', url: '链接13', description: '代码托管', icon: GITHUB_ICON_BASE64 },
+      { id: 'link-10', name: 'GitLab', url: 'https://gitlab.com', description: '开源代码平台', icon: '' },
+      { id: 'link-11', name: 'Vercel', url: '链接26', description: '前端部署', icon: VERCEL_ICON_BASE64 },
+      { id: 'link-12', name: 'Supabase', url: '链接8', description: '后端服务', icon: SUPABASE_ICON_BASE64 },
+      { id: 'link-13', name: 'CodePen', url: 'https://codepen.io', description: '在线代码编辑', icon: '' },
+      { id: 'link-14', name: 'JSFiddle', url: 'https://jsfiddle.net', description: 'JavaScript测试', icon: '' },
+      { id: 'link-15', name: 'Stack Overflow', url: 'https://stackoverflow.com', description: '编程问答', icon: '' }
+    ]
+  },
+  {
+    id: 3,
+    category: '设计资源',
+    sort_order: 3,
+    links: [
+      { id: 'link-16', name: 'Figma', url: '链接17', description: 'UI设计', icon: FIGMA_ICON_BASE64 },
+      { id: 'link-17', name: 'Unsplash', url: '链接9', description: '免费图片', icon: UNSPLASH_ICON_BASE64 },
+      { id: 'link-18', name: 'Pexels', url: 'https://pexels.com', description: '免费素材', icon: '' },
+      { id: 'link-19', name: 'Dribbble', url: 'https://dribbble.com', description: '设计灵感', icon: '' },
+      { id: 'link-20', name: 'Behance', url: 'https://behance.net', description: '创意作品', icon: '' },
+      { id: 'link-21', name: 'Canva', url: 'https://canva.com', description: '在线设计', icon: '' }
+    ]
+  },
+  {
+    id: 4,
+    category: '云计算',
+    sort_order: 4,
+    links: [
+      { id: 'link-22', name: '阿里云', url: '链接2', description: '阿里云计算', icon: '' },
+      { id: 'link-23', name: '腾讯云', url: '链接24', description: '腾讯云计算', icon: '' },
+      { id: 'link-24', name: '华为云', url: 'https://www.huaweicloud.com', description: '华为云服务', icon: '' },
+      { id: 'link-25', name: 'AWS', url: 'https://aws.amazon.com', description: '亚马逊云', icon: '' },
+      { id: 'link-26', name: 'Azure', url: 'https://azure.microsoft.com', description: '微软云', icon: '' },
+      { id: 'link-27', name: 'Google Cloud', url: 'https://cloud.google.com', description: '谷歌云', icon: '' }
+    ]
+  },
+  {
+    id: 5,
+    category: '学习平台',
+    sort_order: 5,
+    links: [
+      { id: 'link-28', name: 'MDN Web Docs', url: 'https://developer.mozilla.org', description: 'Web技术文档', icon: '' },
+      { id: 'link-29', name: 'W3Schools', url: 'https://w3schools.com', description: '编程教程', icon: '' },
+      { id: 'link-30', name: 'Coursera', url: 'https://coursera.org', description: '在线课程', icon: '' },
+      { id: 'link-31', name: 'Udemy', url: 'https://udemy.com', description: '技能学习', icon: '' },
+      { id: 'link-32', name: 'B站', url: 'https://bilibili.com', description: '视频学习', icon: '' },
+      { id: 'link-33', name: '知乎', url: 'https://zhihu.com', description: '知识分享', icon: '' }
+    ]
+  },
+  {
+    id: 6,
+    category: '效率工具',
+    sort_order: 6,
+    links: [
+      { id: 'link-34', name: 'Notion', url: 'https://notion.so', description: '笔记协作', icon: '' },
+      { id: 'link-35', name: '语雀', url: 'https://yuque.com', description: '知识库', icon: '' },
+      { id: 'link-36', name: '飞书', url: 'https://feishu.cn', description: '办公协作', icon: '' },
+      { id: 'link-37', name: '钉钉', url: 'https://dingtalk.com', description: '企业通讯', icon: '' },
+      { id: 'link-38', name: '腾讯文档', url: 'https://docs.qq.com', description: '在线文档', icon: '' },
+      { id: 'link-39', name: '石墨文档', url: 'https://shimo.im', description: '协同办公', icon: '' }
+    ]
+  },
+  {
+    id: 7,
+    category: '媒体娱乐',
+    sort_order: 7,
+    links: [
+      { id: 'link-40', name: 'YouTube', url: 'https://youtube.com', description: '视频平台', icon: '' },
+      { id: 'link-41', name: 'Netflix', url: 'https://netflix.com', description: '流媒体', icon: '' },
+      { id: 'link-42', name: 'Spotify', url: 'https://spotify.com', description: '音乐流媒体', icon: '' },
+      { id: 'link-43', name: '抖音', url: 'https://douyin.com', description: '短视频', icon: '' },
+      { id: 'link-44', name: '小红书', url: 'https://xiaohongshu.com', description: '生活方式', icon: '' },
+      { id: 'link-45', name: '微博', url: 'https://weibo.com', description: '社交媒体', icon: '' }
+    ]
+  },
+  {
+    id: 8,
+    category: '生活服务',
+    sort_order: 8,
+    links: [
+      { id: 'link-46', name: '淘宝', url: 'https://taobao.com', description: '网购平台', icon: '' },
+      { id: 'link-47', name: '京东', url: 'https://jd.com', description: '电商购物', icon: '' },
+      { id: 'link-48', name: '美团', url: 'https://meituan.com', description: '生活服务', icon: '' },
+      { id: 'link-49', name: '饿了么', url: 'https://ele.me', description: '外卖配送', icon: '' },
+      { id: 'link-50', name: '滴滴', url: 'https://didiglobal.com', description: '出行服务', icon: '' },
+      { id: 'link-51', name: '12306', url: 'https://12306.cn', description: '火车票务', icon: '' }
     ]
   }
 ];
@@ -1253,37 +1341,6 @@ const LinkActionModal = ({ link, user, onClose, onEdit, onFavorite, isUserNav })
 };
 
 
-// ====================================================================
-// 【新增】加载动画组件
-// ====================================================================
-const LoadingScreen = ({ isDone }) => {
-    // 使用 isDone 状态控制透明度和可见性
-    // opacity-0, pointer-events-none 确保动画结束后完全消失并阻止点击
-    return (
-        <div 
-            className={`fixed inset-0 flex flex-col items-center justify-center z-[9999] 
-                        bg-white dark:bg-gray-900 transition-opacity duration-500 ease-in-out
-                        ${isDone ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-        >
-            {/* 您的 Logo / 核心图标 */}
-            <div className="text-5xl font-extrabold" style={{ color: '#6A5ACD' }}>
-                <LayoutGrid className="w-16 h-16 animate-bounce text-blue-600 dark:text-blue-400" />
-            </div>
-            <h1 className="text-3xl font-bold mt-4" style={{ color: '#6A5ACD' }}>
-                极速导航网
-            </h1>
-
-            {/* 简易加载条 / 提示 */}
-            <div className="w-40 h-1 mt-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                <div 
-                    className={`h-full bg-blue-600 dark:bg-blue-400 animate-pulse ${isDone ? 'w-full' : 'w-1/2'}`}
-                    style={{ transition: 'width 0.5s' }}
-                ></div>
-            </div>
-            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">正在努力加载数据...</p>
-        </div>
-    );
-};
 
 
 // ====================================================================
@@ -1298,7 +1355,6 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
   
   // 【修改】新增加载动画状态
-  const [isLoading, setIsLoading] = useState(true); 
 
   // 模态框和面板状态
   const [showAuth, setShowAuth] = useState(false);
@@ -1360,8 +1416,6 @@ function App() {
     
     // 确保公共和用户数据都已尝试加载（或没有用户）后，才结束加载状态
     if (publicLoaded && userLoaded) {
-        // 增加一个最小等待时间，保证动画体验
-        setTimeout(() => setIsLoading(false), 500); 
     }
 
   }, []);
@@ -1639,7 +1693,6 @@ function App() {
   return (
     // 【新增】加载动画组件
     <>
-        <LoadingScreen isDone={!isLoading} />
 
         <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-800'}`}>
             
